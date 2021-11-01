@@ -197,13 +197,17 @@ class FunctionPairSelector(PairSelector):
         return negative_indices
         
 
-def HardestNegativeTripletSelector(margin, cpu=False): return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=hardest_negative, cpu=cpu)
+def HardestNegativeTripletSelector(margin, cpu=False):
+    return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=hardest_negative, cpu=cpu)
 
 
-def RandomNegativeTripletSelector(margin, cpu=False): return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=random_hard_negative, cpu=cpu)
+def RandomNegativeTripletSelector(margin, cpu=False):
+    return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=random_hard_negative, cpu=cpu)
 
 
-def SemihardNegativeTripletSelector(margin, cpu=False): return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=lambda x: semihard_negative(x, margin), cpu=cpu)
+def SemihardNegativeTripletSelector(margin, cpu=False):
+    return FunctionNegativeTripletSelector(margin=margin, negative_selection_fn=lambda x: semihard_negative(x, margin), cpu=cpu)
 
 
-def KnockPointPairSelector(margin): return FunctionPairSelector(margin=margin)
+def KnockPointPairSelector(margin):
+    return FunctionPairSelector(margin=margin)

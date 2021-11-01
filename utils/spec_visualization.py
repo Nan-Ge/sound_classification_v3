@@ -5,6 +5,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import sys
 import shutil
+import zipfile
 
 from feature_extraction import load_npy
 from wav_denoising import denoising
@@ -55,15 +56,16 @@ if __name__ == '__main__':
     root_dir = '../Knock_dataset'
     raw_data_dir = 'raw_data'
     domains = ['exp_data', 'sim_data']
-    sound_npy_files = os.listdir(os.path.join(root_dir, raw_data_dir, domains[0]))
+    sound_npy_files = os.listdir(os.path.join(root_dir, raw_data_dir, domains[1]))
 
-    max_len = 3000
+    deno_method = 'pywt'
+
+    max_len = 5000
     fs = 48000
 
     for index, sound_npy_file in enumerate(sound_npy_files):
         fig, ax = plt.subplots(nrows=2, ncols=2)
-
-        if len(sound_npy_file.split('-')) != 2:
+        if len(sound_npy_file.split('-')) < 3:
             continue
 
         ### 实际声音
@@ -75,7 +77,7 @@ if __name__ == '__main__':
         ax[0, 0].get_xaxis().set_visible(False)
         ax[0, 0].label_outer()
 
-        spec = fbank_visualization(sound_data=denoising(exp_sound[0], method='skimage-Visu'), sampling_rate=fs)
+        spec = fbank_visualization(sound_data=denoising(exp_sound[0], method=deno_method), sampling_rate=fs)
         librosa.display.specshow(spec, y_axis='mel', x_axis='time', sr=fs, ax=ax[1, 0])
         ax[1, 0].set(title='exp-deno-fbank')
         ax[1, 0].get_xaxis().set_visible(False)
@@ -91,7 +93,7 @@ if __name__ == '__main__':
         ax[0, 1].get_xaxis().set_visible(False)
         ax[0, 1].label_outer()
 
-        spec = stft_visualization(sound_data=denoising(sim_sound[0], method='skimage-Visu'), sampling_rate=fs)
+        spec = fbank_visualization(sound_data=denoising(sim_sound[0], method=deno_method), sampling_rate=fs)
         librosa.display.specshow(spec, y_axis='mel', x_axis='time', sr=fs, ax=ax[1, 1])
         ax[1, 1].set(title='sim-deno-fbank')
         ax[1, 1].get_xaxis().set_visible(False)
@@ -101,8 +103,6 @@ if __name__ == '__main__':
         # librosa.display.specshow(spec, y_axis='linear', x_axis='time', sr=fs, ax=ax[3])
         # ax[3].set(title='Soft_threshold')
         # ax[3].label_outer()
-
-
 
         ### 实际声音 Mel-Spec
         # mel_spec = mfcc_visualization(sound_data=exp_sound[0], sampling_rate=fs)
@@ -128,7 +128,8 @@ if __name__ == '__main__':
         fig.colorbar(img, ax=ax, format="%+2.f dB")
         fig.suptitle(sound_npy_file)
         plt.savefig(os.path.join('../output_spec', sound_npy_file.split('.')[0]) + '.png')
-        plt.close('all')
+        plt.cla()
+        # plt.close('all')
 
         sys.stdout.write('\r image processing: %d / %d, %f %% ' % (index, len(sound_npy_files), index/len(sound_npy_files) * 100))
         sys.stdout.flush()

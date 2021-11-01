@@ -11,6 +11,7 @@ from wav_denoising import denoising
 def load_npy(audio_filepath, max_len):
     npy_data = np.load(audio_filepath).astype(np.float64)
     data_len = npy_data.shape[1]
+
     if data_len > max_len:  # 删除大于max_len的数据点
         extended_wav = npy_data[:, 0:max_len]
     else:
@@ -53,7 +54,7 @@ if __name__ == '__main__':
         os.mkdir(os.path.join(root_dir, feat_data_dir, domains[i]))
 
     fs = 48000
-    max_len = 3000
+    max_len = 6000
 
     for domain_ in domains:
         path = os.path.join(root_dir, raw_data_dir, domain_)
@@ -62,7 +63,7 @@ if __name__ == '__main__':
             feat_data = []
             file_name = str(file)
             name, postfix = file_name.split('.')
-            if postfix == 'npy' and len(name.split('-')) == 2:
+            if postfix == 'npy':
                 npy_data = load_npy(os.path.join(path, file), max_len=max_len)
                 for data in npy_data:
                     data = data / max(data)

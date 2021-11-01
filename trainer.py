@@ -10,18 +10,28 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 ######################################## Baseline Traning & Testing  ###################################################
 def baseline_fit(train_loader, val_loader, support_set, model, loss_fn, optimizer, scheduler, n_epochs, cuda, log_interval, metrics=[], start_epoch=0):
-    exp_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
+    exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
     log_save_name_1 = 'DANN-Triplet-Net_without_FineTuning_' + exp_time + '.txt'
     print('\n--------- Start baseline model training at:' + exp_time + '---------')
     for epoch in range(start_epoch, n_epochs):
         scheduler.step()
         ### Train stage
         # err_s_label, err_s_domain, err_t_domain, total_iter = train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics, epoch, n_epochs)
-        train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs)
+        train_epoch_triplet_pair(train_loader=train_loader,
+                                 model=model,
+                                 loss_fn=loss_fn,
+                                 optimizer=optimizer,
+                                 cuda=cuda,
+                                 epoch=epoch,
+                                 n_epochs=n_epochs)
 
         ### Test stage
         support_set_mean_vecs, support_label_set = support_mean_vec_generation(model, support_set, cuda)  # 生成support set mean vector
-        accu = test_epoch(val_loader, model, support_set_mean_vecs, support_label_set, cuda)
+        accu = test_epoch(test_loader=val_loader,
+                          model=model,
+                          support_set_mean_vecs=support_set_mean_vecs,
+                          support_label_set=support_label_set,
+                          cuda=cuda)
         print(', Test accuracy: %f for %d / %d' % (accu, epoch+1, n_epochs))
 
         # with open(os.path.join('output_result', log_save_name_1), 'a') as f:
@@ -31,13 +41,13 @@ def baseline_fit(train_loader, val_loader, support_set, model, loss_fn, optimize
         #     test_output = ', Test accuracy: %f for %d / %d' % (accu, epoch + 1, n_epochs)
         #     f.write(test_output)
 
-    model_name = 'DANN_triplet_baseline_model_' + exp_time + '_' + str(accu) +'.pkl'
+    model_name = 'DANN_triplet_baseline_model_' + exp_time + '_' + str(format(accu, '.2f')) + '.pkl'
     model_save_path = os.path.join('output_model', model_name)
     torch.save(model, model_save_path)
     print('\nBaseline Model saved as:', model_save_path)
 
 
-### Pair-wise loss for label predictor
+# Pair-wise loss for domain classifier
 def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
     model.train()
 
@@ -54,7 +64,7 @@ def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoc
     for i in range(len_dataloader):
         p = float(i + epoch * len_dataloader) / (n_epochs * len_dataloader)
         alpha = 2. / (1. + np.exp(-10 * p)) - 1
-        alpha = alpha * 1000
+        # alpha = alpha * 1000
 
         model.zero_grad()
 
@@ -125,7 +135,7 @@ def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoc
         err_domain = loss_fn[1](*pair_wise_loss_inputs)
 
         ##### Totoal loss & Backward
-        err_total = err_s_label + err_t_label + err_domain
+        err_total =  (err_s_label + err_t_label) + err_domain
         err_total.backward()
         optimizer.step()
 
@@ -138,7 +148,7 @@ def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoc
         sys.stdout.flush()
 
 
-### softmax loss for label predictor
+# Softmax loss for domain classifier
 def train_epoch(train_loader, model, loss_fn, optimizer, cuda, metrics, epoch, n_epochs):
     for metric in metrics:
         metric.reset()
@@ -266,8 +276,9 @@ def test_epoch(test_loader, model, support_set_mean_vecs, support_label_set, cud
         cos_sim = cosine_similarity(test_embedding, support_set_mean_vecs)
         pred_label = np.argmax(cos_sim, axis=1)
 
-        # for i in range(len(pred_label)):
-        #     pred_label[i] = support_label_set[pred_label[i]]
+        # 将pred_label的值换为统一的label
+        for index, label in enumerate(pred_label):
+            pred_label[index] = support_label_set[label]
 
         n_correct += sum(test_label == pred_label)
         n_total += len(test_label)
@@ -277,7 +288,7 @@ def test_epoch(test_loader, model, support_set_mean_vecs, support_label_set, cud
 
 
 ############################################# Fine tuning & Testing ####################################################
-def fine_tuning_fit(train_loader, test_loader, support_set_mean_vec, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
+def fine_tuning_fit(train_loader, test_loader, support_label_set, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
     exp_time = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
     log_save_name_1 = 'DANN-Triplet-Net_FineTuning' + exp_time + '.txt'
     print('\n--------- Start fine-tuning at:' + exp_time + '---------')
@@ -285,19 +296,33 @@ def fine_tuning_fit(train_loader, test_loader, support_set_mean_vec, model, loss
     for epoch in range(n_epochs):
         scheduler.step()
         # Train stage
-        fine_tuning_epoch(train_loader=train_loader, model=model, loss_fn=loss_fn, optimizer=optimizer, epoch=epoch, cuda=cuda)
+        fine_tuning_epoch(train_loader=train_loader,
+                          model=model,
+                          loss_fn=loss_fn,
+                          optimizer=optimizer,
+                          epoch=epoch,
+                          cuda=cuda,
+                          support_label_set=support_label_set)
         # Test stage
-        test_accu = fine_tuning_test_epoch(test_loader=test_loader, model=model, cuda=cuda)
+        test_accu = fine_tuning_test_epoch(test_loader=test_loader,
+                                           model=model,
+                                           cuda=cuda,
+                                           support_label_set=support_label_set)
         print(', Test accuracy: %f for %d / %d' % (test_accu, epoch + 1, n_epochs))
 
 
-def fine_tuning_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch):
+def fine_tuning_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, support_label_set):
     model.train()
     len_dataloader = len(train_loader)
 
     for index, item in enumerate(train_loader):
         sound, label = item
         sound = sound.squeeze()  # 删除channel dimension
+
+        # 调整label的值，以进行NLLLoss的计算
+        for index, label_ in enumerate(label):
+            label[index] = torch.tensor(support_label_set.index(label[index]))
+
         if cuda:
             model.cuda()
             sound = sound.cuda()
@@ -323,7 +348,7 @@ def fine_tuning_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch):
     return 0
 
 
-def fine_tuning_test_epoch(test_loader, model, cuda):
+def fine_tuning_test_epoch(test_loader, model, cuda, support_label_set):
     n_total = 0
     n_correct = 0
 
@@ -332,6 +357,11 @@ def fine_tuning_test_epoch(test_loader, model, cuda):
 
         test_iter = iter(test_loader)
         test_sound, test_label = test_iter.next()
+
+        # 调整label的值，以进行NLLLoss的计算
+        for index, label_ in enumerate(test_label):
+            test_label[index] = torch.tensor(support_label_set.index(test_label[index]))
+
         test_sound = test_sound.squeeze()  # 删除channel dimension
         test_label = np.array(test_label.cpu())
 

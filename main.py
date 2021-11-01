@@ -7,14 +7,13 @@ from trainer import *
 from torchvision import transforms
 
 
-######################################## Baseline Training & Testing  ###################################################
-
+######################################## Baseline Training & Testing  ##################################################
 ### Dataset & DataLoader
 root_dir = 'Knock_dataset/fbank_denoised_data'
 source_domain = 'exp_data'
 target_domain = 'sim_data'
 mean, std = 0.1307, 0.3081
-support_label_set = {0, 1, 2, 3, 4, 5, 6}
+support_label_set = {17, 20}
 
 cuda = torch.cuda.is_available()
 kwargs = {}
@@ -26,11 +25,33 @@ kwargs = {}
 # test_dataset = KnockDataset(root_dir, domain, train=False)
 
 # Train-Test-Support split for triplet-loss：测试集中的label完全没有在训练集中出现过
+
+'''
+5个数据集：
+1、source_train_dataset：
+    除去support_label_set中所有标签后的 / 源域的 / 所有样本；
+    用于离线阶段 / label predictor的Triplet-loss；
+2、target_train_dataset：
+    除去support_label_set中所有标签后的 / 目标域的 / 所有样本；
+    用于离线阶段 / label predictor的Triplet-loss；
+3、pair_wise_dataset：
+    除去support_label_set中所有标签后的 / 源域和目标域的 / 成对的 / 所有样本；
+    用于在线阶段 / domain classifier的pair-wise loss；
+4、support_dataset：
+    support_label_set中所有标签的 / 目标域的 / 所有样本；
+    用于在线阶段 / 模型的微调；
+5、test_dataset：
+    support_label_set中所有标签的 / 源域的 / 所有样本；
+    用于在线阶段 / Label predictor的准确性测试；
+'''
+
 source_train_dataset = KnockDataset_train(root_dir, source_domain, support_label_set)
 target_train_dataset = KnockDataset_train(root_dir, target_domain, support_label_set)
-test_dataset = KnockDataset_test(root_dir, source_domain, support_label_set)
-support_dataset = KnockDataset_test(root_dir, target_domain, support_label_set)
+
 pair_wise_dataset = KnockDataset_pair(root_dir, support_label_set=support_label_set)
+
+support_dataset = KnockDataset_test(root_dir, target_domain, support_label_set)
+test_dataset = KnockDataset_test(root_dir, source_domain, support_label_set)
 
 # Baseline DataLoader
 # batch_size = 32
@@ -44,14 +65,15 @@ pair_wise_dataset = KnockDataset_pair(root_dir, support_label_set=support_label_
 Online pair selection: We'll create mini batches by sampling labels that will be present in the mini batch and number
 of examples from each class, 生成mini-batch的大小为 n_classes * n_samples_per_class
 '''
-train_n_classes = source_train_dataset.n_classes
+src_train_n_classes = source_train_dataset.n_classes
+tgt_train_n_classes = target_train_dataset.n_classes
 test_n_classes = test_dataset.n_classes
 n_samples_per_class = 8
 # Source Train
-source_train_batch_sampler = BalancedBatchSampler(source_train_dataset.train_labels, n_classes=train_n_classes, n_samples=n_samples_per_class)
+source_train_batch_sampler = BalancedBatchSampler(source_train_dataset.train_labels, n_classes=src_train_n_classes, n_samples=n_samples_per_class)
 source_online_train_loader = torch.utils.data.DataLoader(source_train_dataset, batch_sampler=source_train_batch_sampler, **kwargs)
 # Target Train
-target_train_batch_sampler = BalancedBatchSampler(target_train_dataset.train_labels, n_classes=train_n_classes, n_samples=n_samples_per_class)
+target_train_batch_sampler = BalancedBatchSampler(target_train_dataset.train_labels, n_classes=tgt_train_n_classes, n_samples=n_samples_per_class)
 target_online_train_loader = torch.utils.data.DataLoader(target_train_dataset, batch_sampler=target_train_batch_sampler, **kwargs)
 # Test
 online_test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset))
@@ -83,7 +105,8 @@ if cuda:
 
 # 损失函数
 triplet_margin = 1.0
-pair_margin = 1e-3
+pair_margin = 1e-2
+
 LP_loss_triplet = OnlineTripletLoss(triplet_margin, SemihardNegativeTripletSelector(triplet_margin))  # 分类损失：三元损失
 DC_loss_domain = torch.nn.NLLLoss()  # 域损失：常规损失
 DC_loss_pair = PairWiseLoss(pair_margin, KnockPointPairSelector(pair_margin))  # 域损失：成对损失
@@ -97,18 +120,18 @@ n_epochs = 100
 log_interval = 1
 
 ### Baseline model Training & Testing
-# baseline_fit(
-#     train_loader=online_train_loader,
-#     val_loader=online_test_loader,
-#     support_set=support_dataset,
-#     model=model,
-#     loss_fn=loss_fn,
-#     optimizer=optimizer,
-#     scheduler=scheduler,
-#     n_epochs=n_epochs,
-#     cuda=cuda,
-#     log_interval=log_interval,
-#     metrics=[AverageNonzeroTripletsMetric()])
+baseline_fit(
+    train_loader=online_train_loader,
+    val_loader=online_test_loader,
+    support_set=support_dataset,
+    model=model,
+    loss_fn=loss_fn,
+    optimizer=optimizer,
+    scheduler=scheduler,
+    n_epochs=n_epochs,
+    cuda=cuda,
+    log_interval=log_interval,
+    metrics=[AverageNonzeroTripletsMetric()])
 
 ############################################# Fine-tuning & Testing ####################################################
 from utils.fine_tuning_utils import model_parameter_printing
@@ -124,7 +147,7 @@ model_list = list(os.listdir(model_path))
 model_list.sort(reverse=True)
 baseline_model = torch.load(os.path.join(model_path, model_list[0]))
 
-support_set_mean_vec, _ = support_mean_vec_generation(baseline_model, support_dataset, cuda)  # 生成support set mean vector
+support_set_mean_vec, support_label_set = support_mean_vec_generation(baseline_model, support_dataset, cuda)  # 生成support set mean vector
 accu = test_epoch(online_test_loader, baseline_model, support_set_mean_vec, support_label_set, cuda)
 print('\nBaseline Model test accuracy: %f' % accu)
 
@@ -155,7 +178,7 @@ scheduler = lr_scheduler.StepLR(optimizer, 100, gamma=0.1, last_epoch=-1)
 fine_tuning_fit(
     train_loader=fine_tuning_set_loader,
     test_loader=online_test_loader,
-    support_set_mean_vec=[],
+    support_label_set=support_label_set,
     model=fine_tuned_model,
     loss_fn=loss_fn,
     optimizer=optimizer,
@@ -167,7 +190,7 @@ fine_tuning_fit(
 ################################################## 可视化观察 ############################################################
 from utils.embedding_visualization import t_SNE_visualization
 
-t_SNE_visualization(source_train_dataset, target_train_dataset, baseline_model, cuda, model_list[0])
+# t_SNE_visualization(source_train_dataset, target_train_dataset, baseline_model, cuda, model_list[0])
 
 
 # train_embeddings_online_triplet, train_labels_online_triplet = extract_embeddings(train_loader, model, cuda)
