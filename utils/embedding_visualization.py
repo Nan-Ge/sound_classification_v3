@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
@@ -7,10 +9,10 @@ import torch
 def t_SNE_visualization(source_dataset, target_dataset, model, cuda, model_name):
     ### 读取数据
     s_x = source_dataset.train_data
-    s_y = np.array(source_dataset.train_labels, dtype=np.int32)
+    s_y = np.array(source_dataset.train_label, dtype=np.int32)
 
     t_x = target_dataset.train_data
-    t_y = np.array(target_dataset.train_labels, dtype=np.int32)
+    t_y = np.array(target_dataset.train_label, dtype=np.int32)
 
     t_sne = TSNE(n_components=2, init='pca', random_state=100)  # 定义t-SNE可视化
 
@@ -56,5 +58,5 @@ def t_SNE_visualization(source_dataset, target_dataset, model, cuda, model_name)
     for i in range(s_x_embed.shape[0], s_x_embed.shape[0] + t_x_embed.shape[0]):
         plt.scatter(tsne_norm[i, 0], tsne_norm[i, 1], color=plt.cm.Set3(total_label[i] - np.min(total_label)), marker=marker_list[1], s=25)
 
-    plt.savefig(model_name + 't_SNE_embedding.png')
+    plt.savefig(os.path.join('output_result', model_name + 't_SNE_embedding.png'))
     print('t_SNE have been saved:' + model_name)

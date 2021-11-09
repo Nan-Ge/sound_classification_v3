@@ -1,6 +1,7 @@
 import numpy as np
 import random
 
+
 def query_generation(support_set_label, test_loader, n_samples_per_class=1):
     support_set_label = [int(i) for i in support_set_label]
     test_x_total = test_loader.dataset.x_data_total

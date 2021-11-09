@@ -2,7 +2,6 @@ from torch.optim import lr_scheduler
 import torch.optim as optim
 import torch.utils.data
 
-from Knock_triplet_loss import *
 from Knock_triplet_loss.trainer import fit
 from Knock_triplet_loss.plot import *
 from Knock_triplet_loss.datasets_Knock import *

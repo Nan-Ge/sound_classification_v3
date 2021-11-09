@@ -50,8 +50,9 @@ online_test_loader = torch.utils.data.DataLoader(test_dataset, batch_sampler=tes
 
 # 设定Network和训练参数
 from Knock_triplet_loss.networks import EmbeddingNet
-from Knock_triplet_loss.losses import OnlineTripletLoss
-from Knock_triplet_loss.utils import AllTripletSelector,HardestNegativeTripletSelector, RandomNegativeTripletSelector, SemihardNegativeTripletSelector # Strategies for selecting triplets within a minibatch
+from losses import OnlineTripletLoss
+from utils.loss_utils import \
+    RandomNegativeTripletSelector  # Strategies for selecting triplets within a minibatch
 from Knock_triplet_loss.metrics import AverageNonzeroTripletsMetric
 
 margin = 1.

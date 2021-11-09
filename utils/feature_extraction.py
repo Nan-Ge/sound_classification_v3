@@ -47,7 +47,7 @@ if __name__ == '__main__':
     root_dir = '../Knock_dataset'
     domains = ['exp_data', 'sim_data']
     raw_data_dir = 'raw_data'
-    feat_data_dir = 'fbank_denoised_data'
+    feat_data_dir = 'feature_data/fbank_denoised_data'
 
     for i in range(0, 2):
         shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]))

@@ -54,7 +54,7 @@ online_test_loader = torch.utils.data.DataLoader(test_dataset, batch_sampler=tes
 # 设定Network和训练参数
 from networks import EmbeddingNet
 from losses import OnlineContrastiveLoss
-from utils import AllPositivePairSelector, HardNegativePairSelector # Strategies for selecting pairs within a minibatch
+from utils.loss_utils import HardNegativePairSelector # Strategies for selecting pairs within a minibatch
 
 margin = 1.
 embedding_net = EmbeddingNet()

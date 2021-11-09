@@ -9,6 +9,7 @@ import zipfile
 
 from feature_extraction import load_npy
 from wav_denoising import denoising
+from dataset import src_tgt_intersection
 
 
 def stft_visualization(sound_data, sampling_rate, n_fft=512, win_length=256, hop_length=64):
@@ -55,12 +56,14 @@ if __name__ == '__main__':
 
     root_dir = '../Knock_dataset'
     raw_data_dir = 'raw_data'
+
+    sound_npy_files = src_tgt_intersection(os.path.join(root_dir, raw_data_dir))
+
     domains = ['exp_data', 'sim_data']
-    sound_npy_files = os.listdir(os.path.join(root_dir, raw_data_dir, domains[1]))
 
     deno_method = 'pywt'
 
-    max_len = 5000
+    max_len = 6000
     fs = 48000
 
     for index, sound_npy_file in enumerate(sound_npy_files):

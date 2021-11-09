@@ -1,9 +1,6 @@
-from data_loader import *
-
 import torch
 from torch.optim import lr_scheduler
 import torch.optim as optim
-from torch.autograd import Variable
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -187,7 +184,7 @@ online_test_loader = torch.utils.data.DataLoader(test_dataset, batch_sampler=tes
 # 设定Network和训练参数
 from networks import EmbeddingNet
 from losses import OnlineContrastiveLoss
-from utils import AllPositivePairSelector, HardNegativePairSelector # Strategies for selecting pairs within a minibatch
+from utils.loss_utils import HardNegativePairSelector # Strategies for selecting pairs within a minibatch
 
 margin = 1.
 embedding_net = EmbeddingNet()
@@ -226,7 +223,7 @@ online_test_loader = torch.utils.data.DataLoader(test_dataset, batch_sampler=tes
 # 设定Network和训练参数
 from networks import EmbeddingNet
 from losses import OnlineTripletLoss
-from utils import AllTripletSelector,HardestNegativeTripletSelector, RandomNegativeTripletSelector, SemihardNegativeTripletSelector # Strategies for selecting triplets within a minibatch
+from utils.loss_utils import RandomNegativeTripletSelector  # Strategies for selecting triplets within a minibatch
 from metrics import AverageNonzeroTripletsMetric
 
 margin = 1.
