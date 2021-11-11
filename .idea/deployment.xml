@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="eecyc@202.120.37.116:4793 password">
+  <component name="PublishConfigData" autoUpload="Always" serverName="GPU_sound_classification" compareModeInSync="TIMESTAMP">
     <serverData>
-      <paths name="eecyc@202.120.37.116:4793 password">
+      <paths name="GPU_modal_sound">
         <serverdata>
           <mappings>
-            <mapping deploy="/mnt/sde/HNan" local="$PROJECT_DIR$" />
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="GPU_sound_classification">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath path="/Knock_dataset" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="node15">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>
