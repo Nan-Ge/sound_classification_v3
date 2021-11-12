@@ -252,7 +252,7 @@ class KnockDataset_val(Dataset):
         self.n_classes = len(self.val_label_set)
 
         for i in iter(self.val_label_set):
-            num_of_train_data = int(self.y_data_total[self.y_data_total == i].shape[0] * (1 - val_ratio))
+            num_of_train_data = int(self.y_data_total[self.y_data_total == i].shape[0] * (1 - F))
 
             self.val_data = np.vstack((self.val_data, self.x_data_total[self.y_data_total == i][num_of_train_data:]))
             self.val_label = np.hstack((self.val_label, self.y_data_total[self.y_data_total == i][num_of_train_data:]))

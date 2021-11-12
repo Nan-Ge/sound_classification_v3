@@ -14,6 +14,7 @@ class GlobalVar:
         self.DATASET_NAME = 'sim_result'
         self.SOUND_ALL = 'sound_all'
         self.RAW_DATA = 'raw_data'
+        self.FEATURE_DATA = 'feature_data'
 
         self.MODAL_SOUND = self.ROOT_DIR + '/modal_sound/cmake-build-debug/bin'
         self.ISOSTUFFER = self.MODAL_SOUND + '/isostuffer'
