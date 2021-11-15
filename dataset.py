@@ -210,6 +210,7 @@ class KnockDataset_train(Dataset):
 
         self.total_label_set = set(self.y_data_total)
         self.train_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.train_label_set = list(self.total_label_set)
         self.train_label_set.sort()
 
         self.train_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
@@ -244,6 +245,7 @@ class KnockDataset_val(Dataset):
 
         self.total_label_set = set(self.y_data_total)
         self.val_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.val_label_set = list(self.total_label_set)
         self.val_label_set.sort()
 
         self.val_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
@@ -279,20 +281,26 @@ class KnockDataset_test(Dataset):
         self.test_labels = np.empty((0,), np.int32)
         self.n_classes = len(support_label_set)
 
-        support_label_set = list(support_label_set)
-        support_label_set.sort()
+        if len(support_label_set) == 0:
+            self.test_data = self.x_data_total
+            self.test_labels = self.y_data_total
+        else:
+            support_label_set = list(support_label_set)
+            support_label_set.sort()
 
-        for i in iter(support_label_set):
-            num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
-            self.test_data = np.vstack((self.test_data, self.x_data_total[self.y_data_total == i][:num_of_data]))
-            self.test_labels = np.hstack((self.test_labels, self.y_data_total[self.y_data_total == i][:num_of_data]))
+            for i in iter(support_label_set):
+                num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
+                self.test_data = np.vstack((self.test_data, self.x_data_total[self.y_data_total == i][:num_of_data]))
+                self.test_labels = np.hstack(
+                    (self.test_labels, self.y_data_total[self.y_data_total == i][:num_of_data]))
 
-        # 将label重新调整为连续整数
-        # for index, label in enumerate(support_label_set):
-        #     self.test_labels[self.test_labels == label] = index
+            # 将label重新调整为连续整数
+            # for index, label in enumerate(support_label_set):
+            #     self.test_labels[self.test_labels == label] = index
 
-        self.test_data = torch.Tensor(self.test_data)
-        self.test_labels = torch.Tensor(self.test_labels)
+            self.test_data = torch.Tensor(self.test_data)
+            self.test_labels = torch.Tensor(self.test_labels)
+
 
     def __getitem__(self, index):
         wav = self.test_data[index: index + 1]
@@ -310,6 +318,7 @@ class KnockDataset_pair(Dataset):
 
         self.total_label_set = set(self.exp_label_total)
         self.pair_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.pair_label_set = list(self.total_label_set)
         self.pair_label_set.sort()
 
         self.exp_data_pair = np.empty((0, self.exp_data_total.shape[1], self.exp_data_total.shape[2]), dtype=np.float32)

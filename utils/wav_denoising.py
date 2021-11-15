@@ -39,5 +39,3 @@ def denoising(sound_data, method='skimage-Visu'):
         sound_rec = pywt.waverec(wavelet_coeffs, wavelet_func)  # 小波重构
 
         return sound_rec
-
-

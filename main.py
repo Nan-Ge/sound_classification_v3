@@ -22,7 +22,7 @@ kwargs = {}
 # domain = (source_domain, target_domain)
 # test_dataset = KnockDataset(root_dir, domain, train=False)
 
-# (1) Train-Test-Support split for triplet-loss：测试集中的label完全没有在训练集中出现过
+# (1) 数据集
 '''
 5个数据集：
 1、source_train_dataset：
@@ -83,8 +83,8 @@ tgt_val_loader = torch.utils.data.DataLoader(tgt_val_dataset, batch_size=len(tgt
 pair_wise_train_loader = torch.utils.data.DataLoader(pair_wise_dataset, batch_size=PAIR_WISE_BATCH)
 
 # --------- DataLoader for Online-Stage --------------
-# online_query_loader = torch.utils.data.DataLoader(query_dataset, batch_size=len(query_dataset))  # Online query
-# fine_tuning_set_loader = torch.utils.data.DataLoader(support_dataset, batch_size=FINE_TUNE_BATCH, shuffle=True)  # Online support
+online_query_loader = torch.utils.data.DataLoader(query_dataset, batch_size=len(query_dataset))  # Online query
+fine_tuning_set_loader = torch.utils.data.DataLoader(support_dataset, batch_size=FINE_TUNE_BATCH, shuffle=True)  # Online support
 
 # --------------- DataLoader Summary -----------------
 offline_train_loader = (src_train_loader, tgt_train_loader, pair_wise_train_loader)
@@ -102,7 +102,10 @@ freq_size = src_train_dataset.x_data_total.shape[2]
 seq_len = src_train_dataset.x_data_total.shape[1]
 input_dim = (freq_size, seq_len)
 
-model = time_freq_x_vec_DANN(input_dim=input_dim, tdnn_embedding_size=EMBEDDING_SIZE, triplet_output_size=LP_OUTPUT_SIZE, pair_output_size=DC_OUTPUT_SIZE)
+model = time_freq_x_vec_DANN(input_dim=input_dim,
+                             tdnn_embedding_size=EMBEDDING_SIZE,
+                             triplet_output_size=LP_OUTPUT_SIZE,
+                             pair_output_size=DC_OUTPUT_SIZE)
 if cuda:
     model.cuda()
 
@@ -117,39 +120,7 @@ optimizer = optim.Adam(model.parameters(), lr=OFF_INITIAL_LR, weight_decay=OFF_W
 scheduler = lr_scheduler.StepLR(optimizer, OFF_LR_ADJUST_STEP, gamma=OFF_LR_ADJUST_RATIO, last_epoch=-1)
 
 # (3) Baseline model Training & Testing
-
-# ------------------------------------------ Transfer Learning (Domain Adversarial) ------------------------------------
-# transfer_baseline_fit(
-#     train_loader=offline_train_loader,
-#     val_loader=offline_val_loader,
-#     model=model,
-#     loss_fn=loss_fn,
-#     optimizer=optimizer,
-#     scheduler=scheduler,
-#     n_epochs=OFFLINE_EPOCH,
-#     cuda=cuda)
-# ----------------------------------------------------------------------------------------------------------------------
-
-# -------------------------------------------- Non-Transfer Learning (X-vector) ----------------------------------------
-# 网路模型
-model = X_vector(input_dim=input_dim[0], tdnn_embedding_size=EMBEDDING_SIZE, n_class=src_train_n_classes)
-if cuda:
-    model.cuda()
-
-# 数据集
-x_vec_train_batch_size = 100
-src_train_loader = torch.utils.data.DataLoader(src_train_dataset, batch_size=int(x_vec_train_batch_size/2), shuffle=True)
-tgt_train_loader = torch.utils.data.DataLoader(tgt_train_dataset, batch_size=int(x_vec_train_batch_size/2), shuffle=True)
-offline_train_loader = (src_train_loader, tgt_train_loader)
-
-# 损失函数
-loss_fn = nn.CrossEntropyLoss()
-
-# 优化器
-optimizer = optim.Adam(model.parameters(), lr=OFF_INITIAL_LR, weight_decay=OFF_WEIGHT_DECAY)
-scheduler = lr_scheduler.StepLR(optimizer, OFF_LR_ADJUST_STEP, gamma=OFF_LR_ADJUST_RATIO, last_epoch=-1)
-
-non_transfer_base_line_fit(
+transfer_baseline_fit(
     train_loader=offline_train_loader,
     val_loader=offline_val_loader,
     model=model,
@@ -157,16 +128,15 @@ non_transfer_base_line_fit(
     optimizer=optimizer,
     scheduler=scheduler,
     n_epochs=OFFLINE_EPOCH,
-    cuda=cuda
-)
-# ----------------------------------------------------------------------------------------------------------------------
+    cuda=cuda)
+
 
 # ////////////////////////////////////////////// Fine-tuning & Testing /////////////////////////////////////////////////
 from utils.fine_tuning_utils import model_parameter_printing
 from network import fine_tuned_DANN_triplet_Net
 
 # (1) 加载Baseline Model & Baseline Model Test
-model_path = './output_model'
+model_path = 'results/output_model'
 model_list = list(os.listdir(model_path))
 model_list.sort(reverse=True)
 baseline_model = torch.load(os.path.join(model_path, model_list[0]))

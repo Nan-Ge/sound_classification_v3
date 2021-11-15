@@ -58,5 +58,5 @@ def t_SNE_visualization(source_dataset, target_dataset, model, cuda, model_name)
     for i in range(s_x_embed.shape[0], s_x_embed.shape[0] + t_x_embed.shape[0]):
         plt.scatter(tsne_norm[i, 0], tsne_norm[i, 1], color=plt.cm.Set3(total_label[i] - np.min(total_label)), marker=marker_list[1], s=25)
 
-    plt.savefig(os.path.join('output_result', model_name + 't_SNE_embedding.png'))
+    plt.savefig(os.path.join('output_training_log', model_name + 't_SNE_embedding.png'))
     print('t_SNE have been saved:' + model_name)

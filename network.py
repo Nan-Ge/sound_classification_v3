@@ -105,9 +105,9 @@ class time_x_vec_DANN(nn.Module):
         # (2) Label predictor
         # Layer 1
         self.label_predictor = nn.Sequential()
-        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size, 256))
-        self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(256))
-        self.label_predictor.add_module('lp_prelu1', nn.PReLU())
+        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size, triplet_output_size))
+        # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(triplet_output_size))
+        # self.label_predictor.add_module('lp_prelu1', nn.PReLU())
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
 
         # Layer 2
@@ -115,19 +115,19 @@ class time_x_vec_DANN(nn.Module):
         # self.class_classifier.add_module('lp_bn2', nn.BatchNorm1d(64))
         # self.class_classifier.add_module('lp_relu2', nn.ReLU(True))
 
-        # Output Layer
-        self.label_predictor.add_module('lp_fc3', nn.Linear(256, triplet_output_size))
+        # Layer 3
+        # self.label_predictor.add_module('lp_fc3', nn.Linear(triplet_output_size, triplet_output_size))
         # self.class_classifier.add_module('c_softmax', nn.LogSoftmax(dim=1))
 
         # (3) Domain classifier
         # Layer 1
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size, 256))
-        self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(256))
-        self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
+        self.domain_classifier.add_module('dc_fc1', nn.Linear(pair_output_size, pair_output_size))
+        # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(pair_output_size))
+        # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
         # Layer 2
-        self.domain_classifier.add_module('dc_fc2', nn.Linear(256, pair_output_size))
+        # self.domain_classifier.add_module('dc_fc2', nn.Linear(pair_output_size, pair_output_size))
         # self.domain_classifier.add_module('dc_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha):
@@ -153,9 +153,9 @@ class time_freq_x_vec_DANN(nn.Module):
         # (2) Label predictor
         # Layer 1
         self.label_predictor = nn.Sequential()
-        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, 512))
-        self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
-        self.label_predictor.add_module('lp_prelu1', nn.PReLU())
+        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
+
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
 
         # ------------------------------ Additional Layer for Test -------------------------------------
@@ -165,18 +165,18 @@ class time_freq_x_vec_DANN(nn.Module):
         # ----------------------------------------------------------------------------------------------
 
         # Layer 2
-        self.label_predictor.add_module('lp_fc3', nn.Linear(512, triplet_output_size))
+        # self.label_predictor.add_module('lp_fc3', nn.Linear(triplet_output_size, triplet_output_size))
         # self.class_classifier.add_module('c_softmax', nn.LogSoftmax(dim=1))
 
         # (3) Domain classifier
         # Layer 1
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, 512))
-        self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
-        self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
+        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
+        # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
         # Layer 2
-        self.domain_classifier.add_module('dc_fc2', nn.Linear(512, pair_output_size))
+        # self.domain_classifier.add_module('dc_fc2', nn.Linear(512, pair_output_size))
         # self.domain_classifier.add_module('dc_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha):

@@ -1,12 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="eecyc@202.120.37.116:4793 password">
+  <component name="PublishConfigData" autoUpload="Always" serverName="eecyc@202.120.37.116:4793 password" compareModeInSync="SIZE">
     <serverData>
       <paths name="eecyc@202.120.37.116:4793 password">
         <serverdata>
           <mappings>
-            <mapping deploy="/mnt/sde/HNan" local="$PROJECT_DIR$" />
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
           </mappings>
+          <excludedPaths>
+            <excludedPath path="/Knock_dataset" />
+            <excludedPath path="/Knock_triplet_loss" />
+            <excludedPath path="/results" />
+            <excludedPath local="true" path="$PROJECT_DIR$/Knock_dataset" />
+            <excludedPath local="true" path="$PROJECT_DIR$/results" />
+            <excludedPath local="true" path="$PROJECT_DIR$/Knock_triplet_loss" />
+            <excludedPath path="Knock_DANN" />
+            <excludedPath local="true" path="$PROJECT_DIR$/Knock_DANN" />
+            <excludedPath local="true" path="$PROJECT_DIR$/可视化结果" />
+          </excludedPaths>
         </serverdata>
       </paths>
     </serverData>

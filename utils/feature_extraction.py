@@ -77,20 +77,3 @@ if __name__ == '__main__':
                 feat_data_npy = np.array(feat_data)
                 save_path = os.path.join(root_dir, feat_data_dir, domain_, file)
                 np.save(save_path, feat_data_npy)
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    
-    
-    
-    
