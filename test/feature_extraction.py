@@ -23,7 +23,7 @@ def extend_data(data, max_len=6192):
     if data.shape[1] > max_len:  # 删除大于max_len的数据点
         extended_data = data[:, :max_len]
     else:
-        extended_data = np.hstack(data, np.zeros((data.shape[0], max_len - data.shape[1])))
+        extended_data = np.hstack((data, np.zeros((data.shape[0], max_len - data.shape[1]))))
     return extended_data
 
 
@@ -45,9 +45,11 @@ def stft_calculating(wav_data, n_fft=512, win_length=256, hop_length=64):
     return normalized_spec.T
 
 
-def fbank_transform(data):
-    wav_data = data / np.max(np.abs(data)) * 32767
-    return fbank_calculating(wav_data)
+def fbank_transform(wav_data):
+    fbank = []
+    for i in range(wav_data.shape[0]):
+        fbank.append(fbank_calculating(wav_data[i].astype(float)))
+    return np.array(fbank)
 
 
 def fbank_calculating(wav_data, sampling_rate=48000, n_fft=512, win_length=256, hop_length=64, n_mels=40):

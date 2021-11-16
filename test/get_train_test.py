@@ -60,8 +60,8 @@ OBJ_DICT = {
     'dual-microwave-oven-front-front': '15-3',
 
     'side1_hair-dryer': '16-1',
-    'side2_hair-dryer': '16-2',
-    'side3_hair-dryer': '16-3',
+    'side2_hair-dryer': '16-1',
+    'side3_hair-dryer': '16-1',
 
     'weight-meter': '17-1',
 
@@ -106,8 +106,8 @@ LABEL_DICT = {
 }
 
 
-def get_target_file_name(obj, i):
-    target_file_name = obj.exp_name + '-' + str(obj.start_num + i) + '-1-1.npy'
+def get_target_file_name(exp_name, i):
+    target_file_name = exp_name + '-' + str(i) + '-1-1.npy'
     return target_file_name
 
 
@@ -124,24 +124,25 @@ def copy_sim_file(obj_list, overwrite=0):
         for i in range(total_num):
             sound_file_name = obj.sound_prefix + obj.obj_file_name + '-' + str(i + 1) + '.npy'
             sound_file_path = os.path.join(sound_path, sound_file_name)
-            target_file_name = get_target_file_name(obj, i)
+            target_file_name = get_target_file_name(obj.exp_name, obj.start_num + i)
             target_file_path = os.path.join(target_path, target_file_name)
             if not os.path.exists(target_file_path) or overwrite:
                 shutil.copyfile(sound_file_path, target_file_path)
 
 
 def get_label(file_name):
-    res = LABEL_DICT.get('-'.join(file_name.split('-')[:2]), "Not Found!")
-    if res == "Not Found!":
+    surface_id = LABEL_DICT.get('-'.join(file_name.split('-')[:2]), "Not Found!")
+    position_id = int(file_name.split('-')[2])
+    if surface_id == "Not Found!":
         print(file_name)
-        return np.int64(0)
+        return np.array([0, position_id])
     else:
-        return res
+        return np.array([surface_id, position_id])
 
 
 # 处理raw_data中的数据
 def raw_to_feature_dataset(obj_list, target_path, transform, overwrite=0):
-    for path in ['sim_data', 'target_data']:
+    for path in ['sim_data', 'exp_data']:
         raw_path = os.path.join(global_var.DATASET, global_var.RAW_DATA, path)
         feature_path = os.path.join(global_var.DATASET, global_var.FEATURE_DATA, target_path, path)
         if not os.path.exists(feature_path):
@@ -149,29 +150,31 @@ def raw_to_feature_dataset(obj_list, target_path, transform, overwrite=0):
         for obj in obj_list.obj_list:
             total_num = np.prod(obj.num)
             for i in range(total_num):
-                target_file_name = get_target_file_name(obj.sound_prefix + obj.obj_file_name, obj.start_num + i)
+                target_file_name = get_target_file_name(obj.exp_name, obj.start_num + i)
                 raw_file_path = os.path.join(raw_path, target_file_name)
                 feature_file_path = os.path.join(feature_path, target_file_name)
                 if not os.path.exists(feature_file_path) or overwrite:
                     raw_file_data = np.load(raw_file_path)
-                    raw_file_data = transform(raw_file_data)
-                    np.save(feature_file_path, raw_file_data)
+                    if path == 'sim_data':
+                        raw_file_data = raw_file_data[0: 1]
+                    raw_file_data_transform = transform(raw_file_data)
+                    np.save(feature_file_path, raw_file_data_transform)
 
 
 # 载入feature_data数据
 def load_feature_data(obj_list, target_path):
     sim_data, sim_labels = [], []
     exp_data, exp_labels = [], []
-    for path in ['sim_data', 'target_data']:
+    for path in ['sim_data', 'exp_data']:
         feature_path = os.path.join(global_var.DATASET, global_var.FEATURE_DATA, target_path, path)
         for obj in obj_list.obj_list:
             total_num = np.prod(obj.num)
             for i in range(total_num):
-                target_file_name = get_target_file_name(obj.sound_prefix + obj.obj_file_name, obj.start_num + i)
+                target_file_name = get_target_file_name(obj.exp_name, obj.start_num + i)
                 feature_file_path = os.path.join(feature_path, target_file_name)
                 feature_file_data = np.load(feature_file_path)
                 feature_file_label = get_label(target_file_name)
-                if path == 'sim-data':
+                if path == 'sim_data':
                     sim_data.append(feature_file_data)
                     sim_labels.append(feature_file_label)
                 else:
@@ -195,13 +198,13 @@ def get_label_set(labels):
 # 根据数据类别进行分类，包含所有类别，每类的一部分作为训练集，一部分作为测试集
 def get_train_test_dataset_1(dataset, ratio):
     sim_data, sim_label, exp_data, exp_label = dataset
-    data_all = np.vstack(sim_data, exp_data)
-    labels_all = np.hstack(sim_label, exp_label)
+    data_all = np.vstack((sim_data, exp_data))
+    labels_all = np.hstack((sim_label, exp_label))
     labels_set = set(labels_all)
 
-    train_data = np.empty((0, 10, 10), dtype=np.float32)
+    train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
     train_labels = np.empty((0,), np.int32)
-    test_data = np.empty((0, 10, 10), dtype=np.float32)
+    test_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
     test_labels = np.empty((0,), np.int32)
 
     for label in labels_set:
@@ -209,10 +212,10 @@ def get_train_test_dataset_1(dataset, ratio):
         num = int(np.sum(index) * ratio)
         data = data_all[index]
         labels = labels_all[index]
-        train_data = np.vstack(train_data, data[:num])
-        train_labels = np.hstack(train_labels, labels[:num])
-        test_data = np.vstack(test_data, data[num:])
-        test_labels = np.hstack(test_data, labels[num:])
+        train_data = np.vstack((train_data, data[:num]))
+        train_labels = np.hstack((train_labels, labels[:num]))
+        test_data = np.vstack((test_data, data[num:]))
+        test_labels = np.hstack((test_labels, labels[num:]))
 
     train_dataset = KnockDataset(train_data, train_labels)
     test_dataset = KnockDataset(test_data, test_labels)
@@ -220,14 +223,58 @@ def get_train_test_dataset_1(dataset, ratio):
     return train_dataset, test_dataset
 
 
-# 将部分标签划分出来
+# 所有标签都有，但是训练集中只有所有的仿真数据和n个实际敲击，剩下的所有实际敲击都是测试集
 def get_train_test_dataset_2(dataset, n):
-    train_dataset, test_dataset = 0, 0
+    sim_data, sim_label, exp_data, exp_label = dataset
+    labels_all = np.hstack((sim_label, exp_label))
+    labels_set = set(labels_all)
+
+    train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    train_labels = np.empty((0,), np.int32)
+    test_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    test_labels = np.empty((0,), np.int32)
+
+    for label in labels_set:
+        data = exp_data[exp_label == label]
+        labels = exp_label[exp_label == label]
+        train_data = np.vstack((train_data, data[:n]))
+        train_labels = np.hstack((train_labels, labels[:n]))
+        train_data = np.vstack((train_data, sim_data[sim_label == label]))
+        train_labels = np.hstack((train_labels, sim_label[sim_label == label]))
+        test_data = np.vstack((test_data, data[n:]))
+        test_labels = np.hstack((test_labels, labels[n:]))
+
+    train_dataset = KnockDataset(train_data, train_labels)
+    test_dataset = KnockDataset(test_data, test_labels)
+
     return train_dataset, test_dataset
 
 
-def get_train_test_dataset_3(dataset, n):
-    pass
+def get_train_test_dataset_3(dataset, ratio):
+    sim_data, sim_label, exp_data, exp_label = dataset
+    data_all = np.vstack((sim_data, exp_data))
+    labels_all = np.hstack((sim_label, exp_label))
+    labels_set = set(labels_all)
+
+    train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    train_labels = np.empty((0,), np.int32)
+    test_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    test_labels = np.empty((0,), np.int32)
+
+    for label in labels_set:
+        index = labels_all == label
+        num = int(np.sum(index) * ratio)
+        data = data_all[index]
+        labels = labels_all[index]
+        train_data = np.vstack((train_data, data[:num]))
+        train_labels = np.hstack((train_labels, labels[:num]))
+        test_data = np.vstack((test_data, data[num:]))
+        test_labels = np.hstack((test_labels, labels[num:]))
+
+    train_dataset = KnockDataset(train_data, train_labels)
+    test_dataset = KnockDataset(test_data, test_labels)
+
+    return train_dataset, test_dataset
 
 
 class KnockDataset(Dataset):
@@ -239,7 +286,7 @@ class KnockDataset(Dataset):
         self.target_transform = target_transform
 
         self.label_set = set(self.knock_labels)
-        self.n_classes = self.val_label_set.__len__()
+        self.n_classes = self.label_set.__len__()
 
         self.knock_data = torch.Tensor(self.knock_data)
         self.knock_labels = torch.Tensor(self.knock_labels)
@@ -265,8 +312,10 @@ if __name__ == '__main__':
     name = 'exp'
     target_path = 'fbank_dnoised_data'
     feature_transform = fbank_transform
+    overwrite = 0
     obj_list = ObjList(name)
-    copy_sim_file(obj_list)
-    raw_to_feature_dataset(obj_list, target_path, feature_transform)
+    copy_sim_file(obj_list, 0)
+    raw_to_feature_dataset(obj_list, target_path, feature_transform, overwrite)
     dataset = load_feature_data(obj_list, target_path)
-    train_dataset, test_dataset = get_train_test_dataset_1(dataset, 0.8)
+    train_dataset_1, test_dataset_1 = get_train_test_dataset_1(dataset, 0.8)
+    train_dataset_2, test_dataset_2 = get_train_test_dataset_2(dataset, 5)

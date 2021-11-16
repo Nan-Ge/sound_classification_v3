@@ -1,9 +1,0 @@
-__pycache__
-dataset/MNIST
-*.pyc
-*.pth
-*.gz
-*.pt
-*.txt
-*.png
-
