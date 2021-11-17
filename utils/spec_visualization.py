@@ -5,11 +5,10 @@ import librosa.display
 import matplotlib.pyplot as plt
 import sys
 import shutil
-import zipfile
 
 from feature_extraction import load_npy
 from wav_denoising import denoising
-from dataset import src_tgt_intersection
+from model_dann_xvec.dataset import src_tgt_intersection
 
 
 def stft_visualization(sound_data, sampling_rate, n_fft=512, win_length=256, hop_length=64):

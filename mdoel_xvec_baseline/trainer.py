@@ -1,12 +1,9 @@
 import torch
-import torch.nn as nn
-from config import *
 
 import numpy as np
 import sys
 import os
 import time
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import confusion_matrix
 from utils.confusion_matrix_plot import plot_confusion_matrix
 
@@ -34,14 +31,14 @@ def non_transfer_base_line_fit(train_loader, val_loader, model, loss_fn, optimiz
         print(', validation accuracy of offline x-vector training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs))
 
         log_save_name_1 = 'x_vector_training' + exp_time + '.txt'
-        with open(os.path.join('results/output_training_log', log_save_name_1), 'a') as f:
+        with open(os.path.join('../results/output_training_log', log_save_name_1), 'a') as f:
             train_output = '\r epoch: [%d / %d], err_softmax: %f' % (epoch + 1, n_epochs, err_softmax)
             f.write(train_output)
             test_output = ', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs)
             f.write(test_output)
 
     model_name = 'x_vector_model_' + exp_time + '_' + str(format(accu, '.2f')) + '.pkl'
-    model_save_path = os.path.join('results/output_model', model_name)
+    model_save_path = os.path.join('../results/output_model', model_name)
     torch.save(model, model_save_path)
     print('\nBaseline Model saved as:', model_save_path)
 

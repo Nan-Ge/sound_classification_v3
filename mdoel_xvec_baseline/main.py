@@ -1,15 +1,14 @@
 from torch.optim import lr_scheduler
 import torch.optim as optim
 import torch.utils.data
-from dataset import *
-from baseline_trainer import *
-from online_trainer import *
-from config import *
-from utils.confusion_matrix_plot import plot_confusion_matrix
-from network import X_vector
+from model_dann_xvec.dataset import *
+from trainer import *
+from model_dann_xvec.online_trainer import *
+from model_dann_xvec.config import *
+from model_dann_xvec.network import X_vector
 
 
-root_dir = 'Knock_dataset/feature_data/fbank_denoised_data'
+root_dir = '../Knock_dataset/feature_data/fbank_denoised_data'
 source_domain = 'exp_data'
 target_domain = 'sim_data'
 cuda = torch.cuda.is_available()

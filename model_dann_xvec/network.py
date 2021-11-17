@@ -1,7 +1,27 @@
 import torch.nn as nn
-from Knock_DANN.functions import ReverseLayerF
 import torch.nn.functional as F
 import torch
+from torch.autograd import Function
+
+
+class L2_norm(nn.Module):
+    def __init__(self):
+        super(L2_norm, self).__init__()
+
+    def forward(self, x):
+        return F.normalize(x, p=2, dim=-1)
+
+
+class ReverseLayerF(Function):
+    @staticmethod
+    def forward(ctx, x, alpha):
+        ctx.alpha = alpha
+        return x.view_as(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        output = grad_output.neg() * ctx.alpha
+        return output, None
 
 
 class TDNN(nn.Module):
@@ -106,6 +126,7 @@ class time_x_vec_DANN(nn.Module):
         # Layer 1
         self.label_predictor = nn.Sequential()
         self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size, triplet_output_size))
+
         # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(triplet_output_size))
         # self.label_predictor.add_module('lp_prelu1', nn.PReLU())
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
@@ -124,7 +145,7 @@ class time_x_vec_DANN(nn.Module):
         self.domain_classifier = nn.Sequential()
         self.domain_classifier.add_module('dc_fc1', nn.Linear(pair_output_size, pair_output_size))
         # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(pair_output_size))
-        # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
+        self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
         # Layer 2
         # self.domain_classifier.add_module('dc_fc2', nn.Linear(pair_output_size, pair_output_size))
@@ -154,6 +175,7 @@ class time_freq_x_vec_DANN(nn.Module):
         # Layer 1
         self.label_predictor = nn.Sequential()
         self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.label_predictor.add_module('lp_l2norm', L2_norm())
         # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
 
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
@@ -172,6 +194,7 @@ class time_freq_x_vec_DANN(nn.Module):
         # Layer 1
         self.domain_classifier = nn.Sequential()
         self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.label_predictor.add_module('dc_l2norm', L2_norm())
         # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
         # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
