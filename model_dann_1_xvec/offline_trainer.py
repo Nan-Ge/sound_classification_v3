@@ -1,14 +1,12 @@
 import torch
-import torch.nn as nn
-from config import *
+from model_dann_1_xvec.config import *
 
 import numpy as np
 import sys
 import os
 import time
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import confusion_matrix
-from utils.confusion_matrix_plot import plot_confusion_matrix
+
 
 # 计算两个向量组之间的欧式距离
 def cal_euclidean(embedding, mean_vec):
@@ -19,7 +17,31 @@ def cal_euclidean(embedding, mean_vec):
     return ecu_sim
 
 
-# --------------------------------------------- 迁移学习训练 -----------------------------------------------------------
+# generate the mean vectors of the support set
+def support_mean_vec_generation(model, support_set, cuda, spec_diff=[]):
+    support_mean_vec = []
+    x_data_support_set = support_set[0]
+    y_data_support_set = support_set[1]
+    support_label_set = list(set(list(np.array(y_data_support_set, dtype=np.int32))))
+    support_label_set.sort()
+
+    if isinstance(spec_diff, torch.Tensor):
+        x_data_support_set = x_data_support_set + spec_diff
+
+    with torch.no_grad():
+        model.eval()
+        if cuda:
+            model.cuda()
+            x_data_support_set = x_data_support_set.cuda()
+        support_embedding, _, _ = model(input_data=x_data_support_set, alpha=0)
+        for label in iter(support_label_set):
+            temp = support_embedding[y_data_support_set == label]
+            temp = np.mean(np.array(temp.cpu()), axis=0)
+            support_mean_vec.append(temp)
+        support_mean_vec = np.array(support_mean_vec)
+    return support_mean_vec, support_label_set
+
+
 def transfer_baseline_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
     exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
@@ -35,7 +57,7 @@ def transfer_baseline_fit(train_loader, val_loader, model, loss_fn, optimizer, s
                                                                   epoch=epoch,
                                                                   n_epochs=n_epochs)
 
-        # Validation stage
+        # Validation stage [offline_val_loader = (src_val_loader, tgt_val_loader)]
         support_set = (val_loader[1].dataset.val_data, val_loader[1].dataset.val_label)
         mean_vec, label_set = support_mean_vec_generation(model, support_set, cuda)  # 生成support set mean vector
         accu, _ = val_epoch(val_loader=val_loader[0],
@@ -46,14 +68,14 @@ def transfer_baseline_fit(train_loader, val_loader, model, loss_fn, optimizer, s
         print(', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs))
 
         log_save_name_1 = 'DANN-Triplet-Net_without_FineTuning_' + exp_time + '.txt'
-        with open(os.path.join('output_result', log_save_name_1), 'a') as f:
+        with open(os.path.join('../results/output_training_log', log_save_name_1), 'a') as f:
             train_output = '\r epoch: [%d / %d], src_err_lp: %f, tgt_err_lp: %f, err_dc: %f' % (epoch + 1, n_epochs, src_err_lp, tgt_err_lp, err_dc)
             f.write(train_output)
             test_output = ', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs)
             f.write(test_output)
 
     model_name = 'DANN_triplet_baseline_model_' + exp_time + '_' + str(format(accu, '.2f')) + '.pkl'
-    model_save_path = os.path.join('output_model', model_name)
+    model_save_path = os.path.join('../results/output_model', model_name)
     torch.save(model, model_save_path)
     print('\nBaseline Model saved as:', model_save_path)
 
@@ -146,6 +168,11 @@ def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoc
         err_dc = loss_fn[1](*pair_wise_loss_inputs)
 
         # (3) Total loss & Backward
+        if src_err_lp > 1000:
+            src_err_lp, _ = loss_fn[0](*src_triple_loss_inputs)
+        elif tgt_err_lp > 1000:
+            tgt_err_lp, _ = loss_fn[0](*tgt_triple_loss_inputs)
+
         err_total = TRIPLET_PAIR_RATIO * (src_err_lp + tgt_err_lp) + err_dc
         err_total.backward()
         optimizer.step()
@@ -250,59 +277,6 @@ def train_epoch_triplet_softmax(train_loader, model, loss_fn, optimizer, cuda, m
     return err_s_label.data.cpu().numpy(), err_s_domain.data.cpu().numpy(), err_t_domain.data.cpu().item(), len_dataloader
 
 
-# generate the mean vectors of the support set
-def support_mean_vec_generation(model, support_set, cuda):
-    support_mean_vec = []
-    x_data_support_set = support_set[0]
-    y_data_support_set = support_set[1]
-    support_label_set = list(set(list(np.array(y_data_support_set, dtype=np.int32))))
-    support_label_set.sort()
-    with torch.no_grad():
-        model.eval()
-        if cuda:
-            model.cuda()
-            x_data_support_set = x_data_support_set.cuda()
-        support_embedding, _, _ = model(input_data=x_data_support_set, alpha=0)
-        for label in iter(support_label_set):
-            temp = support_embedding[y_data_support_set == label]
-            temp = np.mean(np.array(temp.cpu()), axis=0)
-            support_mean_vec.append(temp)
-        support_mean_vec = np.array(support_mean_vec)
-    return support_mean_vec, support_label_set
-
-
-# Overall test on the query set
-def test_epoch(test_loader, model, support_set_mean_vec, support_label_set, cuda):
-    n_total = 0
-    n_correct = 0
-    support_label_set = [int(i) for i in iter(support_label_set)]  # 浮点型变为整型
-
-    with torch.no_grad():
-        model.eval()
-        test_iter = iter(test_loader)
-        test_sound, test_label = test_iter.next()
-        test_sound = test_sound.squeeze()  # 删除channel dimension
-        test_label = np.array(test_label.cpu())
-
-        if cuda:
-            test_sound = test_sound.cuda()
-
-        test_embedding, _, _ = model(input_data=test_sound, alpha=0)
-        test_embedding = np.array(test_embedding.cpu())
-        cos_sim = cosine_similarity(test_embedding, support_set_mean_vec)
-        pred_label = np.argmax(cos_sim, axis=1)
-
-        # 将pred_label的值换为统一的label
-        for index, label in enumerate(pred_label):
-            pred_label[index] = support_label_set[label]
-
-        n_correct += sum(test_label == pred_label)
-        n_total += len(test_label)
-        accu = n_correct / n_total
-
-    return accu
-
-
 # Validation on the query set
 def val_epoch(val_loader, model, support_set_mean_vec, support_label_set, cuda):
     n_total = 0
@@ -338,148 +312,9 @@ def val_epoch(val_loader, model, support_set_mean_vec, support_label_set, cuda):
 
         confusion_mat = confusion_matrix(val_label, pred_label)
 
-    return accu, confusion_mat
+    return accu * 100, confusion_mat
 
 
-# --------------------------------------------- 非迁移学习训练 -----------------------------------------------------------
-def non_transfer_base_line_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
-    exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-    print('\n--------- Start transfer baseline model training at:' + exp_time + '---------')
-    for epoch in range(0, n_epochs):
-        scheduler.step()
-        # Train Stage
-        err_softmax = train_epoch_x_vec(train_loader=train_loader,
-                                        model=model,
-                                        loss_fn=loss_fn,
-                                        optimizer=optimizer,
-                                        cuda=cuda,
-                                        epoch=epoch)
-
-        # Validation Stage
-        accu, cm = val_epoch_x_vec(
-            val_loader=val_loader,
-            model=model,
-            cuda=cuda
-        )
-        print(', validation accuracy of offline x-vector training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs))
-
-        log_save_name_1 = 'x_vector_training' + exp_time + '.txt'
-        with open(os.path.join('output_result', log_save_name_1), 'a') as f:
-            train_output = '\r epoch: [%d / %d], err_softmax: %f' % (epoch + 1, n_epochs, err_softmax)
-            f.write(train_output)
-            test_output = ', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs)
-            f.write(test_output)
-
-    model_name = 'x_vector_model_' + exp_time + '_' + str(format(accu, '.2f')) + '.pkl'
-    model_save_path = os.path.join('output_model', model_name)
-    torch.save(model, model_save_path)
-    print('\nBaseline Model saved as:', model_save_path)
-
-    plot_confusion_matrix(cm=cm, savename=model_name + '-confusion_matrix.png', classes=[str(i) for i in range(0,43)])
-
-
-# Train an epoch on the x-vector
-def train_epoch_x_vec(train_loader, model, loss_fn, optimizer, cuda, epoch):
-    src_loader = train_loader[0]
-    tgt_loader = train_loader[1]
-
-    src_iter = iter(src_loader)
-    tgt_iter = iter(tgt_loader)
-
-    len_dataloader = max(len(src_loader), len(tgt_loader)) - 1
-
-    for i in range(len_dataloader):
-        model.zero_grad()
-
-        src_data, src_label = src_iter.next()
-        src_data = src_data.squeeze()  # 删除channel dimension
-        tgt_data, tgt_label = tgt_iter.next()
-        tgt_data = tgt_data.squeeze()  # 删除channel dimension
-
-        if cuda:
-            src_data = src_data.cuda()
-            src_label = src_label.cuda()
-            tgt_data = tgt_data.cuda()
-            tgt_label = tgt_label.cuda()
-
-        # train_data = src_data
-        # train_label = src_label
-
-        train_data = torch.cat((src_data, tgt_data), dim=0)
-        train_label = torch.cat((src_label, tgt_label), dim=0)
-
-        train_label = train_label - 1
-
-        # 前向传播
-        _, _, pred = model(input_data=train_data)
-
-        # Softmax Loss
-        err_softmax = loss_fn(pred, train_label)
-
-        # 反向传播
-        err_softmax.backward()
-        optimizer.step()
-
-        # Console output
-        sys.stdout.write('\r epoch: %d, [iter: %d / all %d], err_softmax: %f' %
-                         (epoch,
-                          i + 1,
-                          len_dataloader,
-                          err_softmax.data.cpu().numpy()))
-        sys.stdout.flush()
-
-    return err_softmax
-
-
-# Validate the x-vector
-def val_epoch_x_vec(val_loader, model, cuda):
-    n_total = 0
-    n_correct = 0
-
-    src_val_loader = val_loader[0]
-    tgt_val_loader = val_loader[1]
-
-    src_val_iter = iter(src_val_loader)
-    tgt_val_iter = iter(tgt_val_loader)
-
-    with torch.no_grad():
-        model.eval()
-
-        src_val_data, src_val_label = src_val_iter.next()
-        src_val_data = src_val_data.squeeze()  # 删除channel dimension
-        src_val_label = np.array(src_val_label.cpu())
-
-        tgt_val_data, tgt_val_label = tgt_val_iter.next()
-        tgt_val_data = tgt_val_data.squeeze()  # 删除channel dimension
-        tgt_val_label = np.array(tgt_val_label.cpu())
-
-        if cuda:
-            src_val_data = src_val_data.cuda()
-            tgt_val_data = tgt_val_data.cuda()
-
-        # val_data = src_val_data
-        # val_label = src_val_label
-
-        val_data = torch.cat((src_val_data, tgt_val_data), dim=0)
-        val_label = np.concatenate((src_val_label, tgt_val_label), axis=0)
-
-        val_label = val_label - 1
-
-        # 前向传播
-        _, _, pred_logit = model(input_data=val_data)
-
-        # Inference
-        pred_label = np.argmax(pred_logit.detach().cpu().numpy(), axis=1)
-
-        # Statistic
-        n_correct += sum(val_label == pred_label)
-        n_total += len(val_label)
-        accu = n_correct / n_total
-
-        # Confusion Matrix
-        confusion_mat = confusion_matrix(val_label, pred_label)
-
-        return accu, confusion_mat
 
 
 

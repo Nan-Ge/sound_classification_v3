@@ -2,108 +2,45 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 import shutil
-
-import os
-import math
-import numpy as np
-import random
-
 from sklearn.utils import shuffle
 
 from config import *
+from config_2 import *
 from feature_extraction import *
 
 
-OBJ_DICT = {
-    'top_razor-core-x': '2-1',
-    'side_razor-core-x': '2-2',
-    'razor-core-x-back': '2-3',  # 新增
+class BalancedBatchSampler(BatchSampler):
 
-    'xiaomi-lamp-top': '3-1',
-    'xiaomi-lamp-body': '3-2',
-    'xiaomi-lamp-bottom': '3-3',
+    def __init__(self, labels, n_classes, n_samples):
+        self.labels = labels
+        self.labels_set = list(set(self.labels.numpy()))
+        self.label_to_indices = {label: np.where(self.labels.numpy() == label)[0] for label in self.labels_set}
+        for l in self.labels_set:
+            np.random.shuffle(self.label_to_indices[l])
+        self.used_label_indices_count = {label: 0 for label in self.labels_set}
+        self.count = 0
+        self.n_classes = n_classes
+        self.n_samples = n_samples
+        self.n_dataset = len(self.labels)
+        self.batch_size = self.n_samples * self.n_classes
 
-    'dehumidifier-top': '4-1',
-    'dehumidifier-body': '4-2',
+    def __iter__(self):
+        self.count = 0
+        # while self.count + self.batch_size < self.n_dataset:
+        while 1:
+            classes = np.random.choice(self.labels_set, self.n_classes, replace=False)
+            indices = []
+            for class_ in classes:
+                indices.extend(self.label_to_indices[class_][self.used_label_indices_count[class_]:self.used_label_indices_count[class_] + self.n_samples])
+                self.used_label_indices_count[class_] += self.n_samples
+                if self.used_label_indices_count[class_] + self.n_samples > len(self.label_to_indices[class_]):
+                    np.random.shuffle(self.label_to_indices[class_])
+                    self.used_label_indices_count[class_] = 0
+            yield indices
+            self.count += self.batch_size
 
-    'top2_dell-inspire-case-right-side': '5-1',
-    'top1_dell-inspire-case-left-side': '5-2',
-    'side_dell-inspire-case-right-side': '5-3',
-    'dell-inspire-case-front': '5-4',
-
-    'top_galanz-microwave-oven-body': '6-1',
-    'side_galanz-microwave-oven-body': '6-2',
-    'galanz-microwave-oven-front': '6-3',
-
-    'white-kettle-top': '7-1',
-    'white-kettle-handle': '7-2',
-    'white-kettle-body': '7-3',
-
-    'top_philips-speaker-body': '8-1',
-    'side_philips-speaker-body': '8-2',
-
-    'top_yamaha-speaker': '9-1',
-    'side_yamaha-speaker': '9-2',
-
-    'top_mitsubishi-projector': '10-1',
-    'front_mitsubishi-projector': '10-2',
-
-    'hp-printer-top': '12-1',
-    'hp-printer-front': '12-2',
-
-    'electic-kettle-top': '14-1',
-    'electic-kettle-handle': '14-2',
-    'electic-kettle-body': '14-3',
-
-    'top_dual-microwave-oven-side': '15-1',
-    'side_dual-microwave-oven-side': '15-2',
-    'dual-microwave-oven-front-front': '15-3',
-
-    'side1_hair-dryer': '16-1',
-    'side2_hair-dryer': '16-1',
-    'side3_hair-dryer': '16-1',
-
-    'weight-meter': '17-1',
-
-    'rice-cooker-top': '18-1',
-    'side1_rice-cooker-side': '18-2',
-    'side2_rice-cooker-side': '18-3',
-
-    'top_oven-body': '19-1',
-    'side_oven-body': '19-2',
-    'oven-front': '19-3',
-    'oven-panel': '19-4',
-
-    'tv-base': '20-3',
-
-    'coffee-machine-top2': '21-2',
-    'coffee-machine-front': '21-3',
-
-    'imac-screen': '22-1',
-    'imac-body': '22-2',
-}
-
-LABEL_DICT = {
-    '2-1': np.int64(1), '2-2': np.int64(2),
-    '3-1': np.int64(3), '3-2': np.int64(4), '3-3': np.int64(5),
-    '4-1': np.int64(6), '4-2': np.int64(7),
-    '5-1': np.int64(8), '5-2': np.int64(9), '5-3': np.int64(10), '5-4': np.int64(46),
-    '6-1': np.int64(11), '6-2': np.int64(12), '6-3': np.int64(13),
-    '7-1': np.int64(14), '7-2': np.int64(15), '7-3': np.int64(45),
-    '8-1': np.int64(16), '8-2': np.int64(17),
-    '9-1': np.int64(18), '9-2': np.int64(19),
-    '10-1': np.int64(20), '10-2': np.int64(21),
-    '12-1': np.int64(22), '12-2': np.int64(23),
-    '14-1': np.int64(24), '14-2': np.int64(25), '14-3': np.int64(26),
-    '15-1': np.int64(27), '15-2': np.int64(28),
-    '16-1': np.int64(29), '16-2': np.int64(30), '16-3': np.int64(31),
-    '17-1': np.int64(32),
-    '18-1': np.int64(33), '18-2': np.int64(34), '18-3': np.int64(35),
-    '19-1': np.int64(36), '19-2': np.int64(37), '19-3': np.int64(38), '19-4': np.int64(39),
-    '20-3': np.int64(40),
-    '21-2': np.int64(41), '21-3': np.int64(42),
-    '22-1': np.int64(43), '22-2': np.int64(44)
-}
+    def __len__(self):
+        return self.n_dataset // self.batch_size
 
 
 def get_target_file_name(exp_name, i):
@@ -163,8 +100,8 @@ def raw_to_feature_dataset(obj_list, target_path, transform, overwrite=0):
 
 # 载入feature_data数据
 def load_feature_data(obj_list, target_path):
-    sim_data, sim_labels = [], []
-    exp_data, exp_labels = [], []
+    sim_data, sim_labels = None, None
+    exp_data, exp_labels = None, None
     for path in ['sim_data', 'exp_data']:
         feature_path = os.path.join(global_var.DATASET, global_var.FEATURE_DATA, target_path, path)
         for obj in obj_list.obj_list:
@@ -175,11 +112,19 @@ def load_feature_data(obj_list, target_path):
                 feature_file_data = np.load(feature_file_path)
                 feature_file_label = get_label(target_file_name)
                 if path == 'sim_data':
-                    sim_data.append(feature_file_data)
-                    sim_labels.append(feature_file_label)
+                    if sim_data is None:
+                        sim_data = feature_file_data
+                        sim_labels = feature_file_label
+                    else:
+                        sim_data = np.vstack((sim_data, feature_file_data))
+                        sim_labels = np.vstack((sim_labels, feature_file_label))
                 else:
-                    exp_data.append(feature_file_data)
-                    exp_labels.append(feature_file_label)
+                    if exp_data is None:
+                        exp_data = feature_file_data
+                        exp_labels = np.tile(feature_file_label, (feature_file_data.shape[0], 1))
+                    else:
+                        exp_data = np.vstack((exp_data, feature_file_data))
+                        exp_labels = np.vstack((exp_labels, np.tile(feature_file_label, (feature_file_data.shape[0], 1))))
 
     sim_data, sim_labels = np.array(sim_data), np.array(sim_labels)
     exp_data, exp_labels = np.array(exp_data), np.array(exp_labels)
@@ -199,7 +144,7 @@ def get_label_set(labels):
 def get_train_test_dataset_1(dataset, ratio):
     sim_data, sim_label, exp_data, exp_label = dataset
     data_all = np.vstack((sim_data, exp_data))
-    labels_all = np.hstack((sim_label, exp_label))
+    labels_all = np.hstack((sim_label[:, 0], exp_label[:, 0]))
     labels_set = set(labels_all)
 
     train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
@@ -212,8 +157,8 @@ def get_train_test_dataset_1(dataset, ratio):
         num = int(np.sum(index) * ratio)
         data = data_all[index]
         labels = labels_all[index]
-        train_data = np.vstack((train_data, data[:num]))
-        train_labels = np.hstack((train_labels, labels[:num]))
+        train_data = np.vstack((train_data, data[0: num]))
+        train_labels = np.hstack((train_labels, labels[0: num]))
         test_data = np.vstack((test_data, data[num:]))
         test_labels = np.hstack((test_labels, labels[num:]))
 
@@ -226,7 +171,7 @@ def get_train_test_dataset_1(dataset, ratio):
 # 所有标签都有，但是训练集中只有所有的仿真数据和n个实际敲击，剩下的所有实际敲击都是测试集
 def get_train_test_dataset_2(dataset, n):
     sim_data, sim_label, exp_data, exp_label = dataset
-    labels_all = np.hstack((sim_label, exp_label))
+    labels_all = np.hstack((sim_label[:, 0], exp_label[:, 0]))
     labels_set = set(labels_all)
 
     train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
@@ -235,12 +180,12 @@ def get_train_test_dataset_2(dataset, n):
     test_labels = np.empty((0,), np.int32)
 
     for label in labels_set:
-        data = exp_data[exp_label == label]
-        labels = exp_label[exp_label == label]
-        train_data = np.vstack((train_data, data[:n]))
-        train_labels = np.hstack((train_labels, labels[:n]))
-        train_data = np.vstack((train_data, sim_data[sim_label == label]))
-        train_labels = np.hstack((train_labels, sim_label[sim_label == label]))
+        data = exp_data[exp_label[:, 0] == label]
+        labels = exp_label[:, 0][exp_label[:, 0] == label]
+        train_data = np.vstack((train_data, data[0: n]))
+        train_labels = np.hstack((train_labels, labels[0: n]))
+        train_data = np.vstack((train_data, sim_data[sim_label[:, 0] == label]))
+        train_labels = np.hstack((train_labels, sim_label[:, 0][sim_label[:, 0] == label]))
         test_data = np.vstack((test_data, data[n:]))
         test_labels = np.hstack((test_labels, labels[n:]))
 
@@ -250,10 +195,10 @@ def get_train_test_dataset_2(dataset, n):
     return train_dataset, test_dataset
 
 
-def get_train_test_dataset_3(dataset, ratio):
+# 所有标签都有，但是训练集中只有n个实际敲击，剩下的所有实际敲击都是测试集
+def get_train_test_dataset_3(dataset, n):
     sim_data, sim_label, exp_data, exp_label = dataset
-    data_all = np.vstack((sim_data, exp_data))
-    labels_all = np.hstack((sim_label, exp_label))
+    labels_all = np.hstack((sim_label[:, 0], exp_label[:, 0]))
     labels_set = set(labels_all)
 
     train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
@@ -262,14 +207,44 @@ def get_train_test_dataset_3(dataset, ratio):
     test_labels = np.empty((0,), np.int32)
 
     for label in labels_set:
-        index = labels_all == label
-        num = int(np.sum(index) * ratio)
-        data = data_all[index]
-        labels = labels_all[index]
-        train_data = np.vstack((train_data, data[:num]))
-        train_labels = np.hstack((train_labels, labels[:num]))
-        test_data = np.vstack((test_data, data[num:]))
-        test_labels = np.hstack((test_labels, labels[num:]))
+        data = exp_data[exp_label[:, 0] == label]
+        labels = exp_label[:, 0][exp_label[:, 0] == label]
+        train_data = np.vstack((train_data, data[0: n]))
+        train_labels = np.hstack((train_labels, labels[0: n]))
+        # train_data = np.vstack((train_data, sim_data[sim_label[:, 0] == label]))
+        # train_labels = np.hstack((train_labels, sim_label[:, 0][sim_label[:, 0] == label]))
+        test_data = np.vstack((test_data, data[n:]))
+        test_labels = np.hstack((test_labels, labels[n:]))
+
+    train_dataset = KnockDataset(train_data, train_labels)
+    test_dataset = KnockDataset(test_data, test_labels)
+
+    return train_dataset, test_dataset
+
+
+# 所有标签都有，但是训练集中只有所有的仿真数据和n个实际敲击，剩下的所有实际敲击都是测试集，使用敲击样例利用残差矫正仿真数据
+def get_train_test_dataset_4(dataset, n):
+    sim_data, sim_label, exp_data, exp_label = dataset
+    labels_all = np.hstack((sim_label[:, 0], exp_label[:, 0]))
+    labels_set = set(labels_all)
+
+    train_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    train_labels = np.empty((0,), np.int32)
+    test_data = np.empty((0, sim_data.shape[1], sim_data.shape[2]), dtype=np.float32)
+    test_labels = np.empty((0,), np.int32)
+
+    for label in labels_set:
+        data = exp_data[exp_label[:, 0] == label]
+        labels = exp_label[:, 0][exp_label[:, 0] == label]
+        train_data = np.vstack((train_data, data[0: n]))
+        train_labels = np.hstack((train_labels, labels[0: n]))
+        sim_data_transform = sim_data[sim_label[:, 0] == label]
+        diff = np.average(train_data, axis=0) - np.average(sim_data_transform, axis=0)
+        sim_data_transform = sim_data_transform + diff
+        train_data = np.vstack((train_data, sim_data_transform))
+        train_labels = np.hstack((train_labels, sim_label[:, 0][sim_label[:, 0] == label]))
+        test_data = np.vstack((test_data, data[n:]))
+        test_labels = np.hstack((test_labels, labels[n:]))
 
     train_dataset = KnockDataset(train_data, train_labels)
     test_dataset = KnockDataset(test_data, test_labels)
@@ -286,7 +261,7 @@ class KnockDataset(Dataset):
         self.target_transform = target_transform
 
         self.label_set = set(self.knock_labels)
-        self.n_classes = self.label_set.__len__()
+        self.n_classes = max(self.label_set)
 
         self.knock_data = torch.Tensor(self.knock_data)
         self.knock_labels = torch.Tensor(self.knock_labels)
@@ -317,5 +292,7 @@ if __name__ == '__main__':
     copy_sim_file(obj_list, 0)
     raw_to_feature_dataset(obj_list, target_path, feature_transform, overwrite)
     dataset = load_feature_data(obj_list, target_path)
-    train_dataset_1, test_dataset_1 = get_train_test_dataset_1(dataset, 0.8)
-    train_dataset_2, test_dataset_2 = get_train_test_dataset_2(dataset, 5)
+    # train_dataset_1, test_dataset_1 = get_train_test_dataset_1(dataset, 0.8)
+    # train_dataset_2, test_dataset_2 = get_train_test_dataset_2(dataset, 5)
+    # train_dataset_3, test_dataset_3 = get_train_test_dataset_3(dataset, 1)
+    train_dataset_4, test_dataset_4 = get_train_test_dataset_4(dataset, 1)

@@ -1,6 +1,6 @@
 import numpy as np
 # Dataset Related
-SUPPORT_SET_LABEL = {0}  # 支撑集样本类别
+SUPPORT_SET_LABEL = set()  # 支撑集样本类别
 LABEL_DICT = {
     '2-1': np.int64(1), '2-2': np.int64(2),
     '3-1': np.int64(3), '3-2': np.int64(4), '3-3': np.int64(5),
@@ -29,9 +29,9 @@ LP_OUTPUT_SIZE = 256  # Label Predictor输出的大小（一维）
 DC_OUTPUT_SIZE = 256  # Domain Classifier输出的大小（一维）
 
 # Loss Related
-TRIPLET_MARGIN = 10.0  # Triplet loss的margin
+TRIPLET_MARGIN = 1  # Triplet loss的margin
 PAIR_MARGIN = 0.25  # Pair-wise loss的margin
-TRIPLET_PAIR_RATIO = 100  # 两种Loss的权重
+TRIPLET_PAIR_RATIO = 1  # 权重比，Triplet_loss / Pair_wise_loss
 
 # Offline-training Related
 OFF_INITIAL_LR = 1e-3  # 初始学习率

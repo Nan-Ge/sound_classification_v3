@@ -1,12 +1,10 @@
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
-from config import *
+from model_dann_1_xvec.config import *
 
 import os
-import math
 import numpy as np
-import random
 
 from sklearn.utils import shuffle
 
@@ -210,6 +208,7 @@ class KnockDataset_train(Dataset):
 
         self.total_label_set = set(self.y_data_total)
         self.train_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.train_label_set = list(self.total_label_set)
         self.train_label_set.sort()
 
         self.train_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
@@ -244,6 +243,7 @@ class KnockDataset_val(Dataset):
 
         self.total_label_set = set(self.y_data_total)
         self.val_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.val_label_set = list(self.total_label_set)
         self.val_label_set.sort()
 
         self.val_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
@@ -252,7 +252,7 @@ class KnockDataset_val(Dataset):
         self.n_classes = len(self.val_label_set)
 
         for i in iter(self.val_label_set):
-            num_of_train_data = int(self.y_data_total[self.y_data_total == i].shape[0] * (1 - F))
+            num_of_train_data = int(self.y_data_total[self.y_data_total == i].shape[0] * (1 - val_ratio))
 
             self.val_data = np.vstack((self.val_data, self.x_data_total[self.y_data_total == i][num_of_train_data:]))
             self.val_label = np.hstack((self.val_label, self.y_data_total[self.y_data_total == i][num_of_train_data:]))
@@ -279,20 +279,25 @@ class KnockDataset_test(Dataset):
         self.test_labels = np.empty((0,), np.int32)
         self.n_classes = len(support_label_set)
 
-        support_label_set = list(support_label_set)
-        support_label_set.sort()
+        if len(support_label_set) == 0:
+            self.test_data = self.x_data_total
+            self.test_labels = self.y_data_total
+        else:
+            support_label_set = list(support_label_set)
+            support_label_set.sort()
 
-        for i in iter(support_label_set):
-            num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
-            self.test_data = np.vstack((self.test_data, self.x_data_total[self.y_data_total == i][:num_of_data]))
-            self.test_labels = np.hstack((self.test_labels, self.y_data_total[self.y_data_total == i][:num_of_data]))
+            for i in iter(support_label_set):
+                num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
+                self.test_data = np.vstack((self.test_data, self.x_data_total[self.y_data_total == i][:num_of_data]))
+                self.test_labels = np.hstack(
+                    (self.test_labels, self.y_data_total[self.y_data_total == i][:num_of_data]))
 
-        # 将label重新调整为连续整数
-        # for index, label in enumerate(support_label_set):
-        #     self.test_labels[self.test_labels == label] = index
+            # 将label重新调整为连续整数
+            # for index, label in enumerate(support_label_set):
+            #     self.test_labels[self.test_labels == label] = index
 
-        self.test_data = torch.Tensor(self.test_data)
-        self.test_labels = torch.Tensor(self.test_labels)
+            self.test_data = torch.Tensor(self.test_data)
+            self.test_labels = torch.Tensor(self.test_labels)
 
     def __getitem__(self, index):
         wav = self.test_data[index: index + 1]
@@ -305,108 +310,50 @@ class KnockDataset_test(Dataset):
 
 class KnockDataset_pair(Dataset):
     def __init__(self, root_dir, support_label_set, val_ratio=0.2):
+        # load_data()读取数据
         self.exp_data_total, self.exp_label_total = load_data(root_dir, 'exp_data', train_flag=1)
         self.sim_data_total, self.sim_label_total = load_data(root_dir, 'sim_data', train_flag=1)
 
+        # 剔除支撑集label
         self.total_label_set = set(self.exp_label_total)
-        self.pair_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
+        self.pair_label_set = list(self.total_label_set - support_label_set)
+        self.pair_label_set = list(self.total_label_set)
         self.pair_label_set.sort()
 
-        self.exp_data_pair = np.empty((0, self.exp_data_total.shape[1], self.exp_data_total.shape[2]), dtype=np.float32)
-        self.sim_data_pair = np.empty((0, self.sim_data_total.shape[1], self.sim_data_total.shape[2]), dtype=np.float32)
+        # 获取label数量
+        self.n_classes = len(self.pair_label_set)
+
+        # 提取数据
+        self.exp_data = np.empty((0, self.exp_data_total.shape[1], self.exp_data_total.shape[2]), dtype=np.float32)
+        self.exp_label = np.empty((0,), np.int32)
+        self.sim_data = np.empty((0, self.sim_data_total.shape[1], self.sim_data_total.shape[2]), dtype=np.float32)
+        self.sim_label = np.empty((0,), np.int32)
 
         for i in iter(self.pair_label_set):
-            num_of_train_data = int(self.exp_label_total[self.exp_label_total == i].shape[0] * (1 - val_ratio))
-            self.exp_data_pair = np.vstack(
-                (self.exp_data_pair, self.exp_data_total[self.exp_label_total == i][:num_of_train_data]))
-            self.sim_data_pair = np.vstack(
-                (self.sim_data_pair, self.sim_data_total[self.exp_label_total == i][:num_of_train_data]))
+            train_data_num = int(self.exp_label_total[self.exp_label_total == i].shape[0] * (1 - val_ratio))
 
-        # self.total_npy_files = src_tgt_intersection(root_dir=root_dir)
-        # self.total_exp_x_data = []
-        # self.total_sim_x_data = []
-        # for npy_file in self.total_npy_files:
-        #     name, postfix = npy_file.split('.')
-        #     if get_label_object(name) in support_label_set:
-        #         continue
-        #     exp_x_data, sim_x_data = balanced_sampling_on_src_tgt(root_dir=root_dir, file_name=npy_file)
-        #     for exp_data in exp_x_data:
-        #         self.total_exp_x_data.append(exp_data)
-        #     for sim_data in sim_x_data:
-        #         self.total_sim_x_data.append(sim_data)
+            self.exp_data = np.vstack((self.exp_data, self.exp_data_total[self.exp_label_total == i][:train_data_num]))
+            self.exp_label = np.concatenate(
+                (self.exp_label, self.exp_label_total[self.exp_label_total == i][:train_data_num]))
 
-        self.exp_data_pair = torch.Tensor(np.array(self.exp_data_pair, dtype=np.float32))
-        self.sim_data_pair = torch.Tensor(np.array(self.sim_data_pair, dtype=np.float32))
+            self.sim_data = np.vstack((self.sim_data, self.sim_data_total[self.exp_label_total == i][:train_data_num]))
+            self.sim_label = np.concatenate(
+                (self.sim_label, self.sim_label_total[self.sim_label_total == i][:train_data_num]))
+
+        self.exp_data = torch.Tensor(self.exp_data)
+        self.exp_label = torch.Tensor(self.exp_label)
+        self.sim_data = torch.Tensor(self.sim_data)
+        self.sim_label = torch.Tensor(self.sim_label)
 
     def __getitem__(self, item):
-        exp_data = self.exp_data_pair[item: item + 1]
-        sim_data = self.sim_data_pair[item: item + 1]
-        return exp_data, sim_data
+        exp_data = self.exp_data[item: item + 1]
+        exp_label = self.exp_label[item: item + 1]
+        sim_data = self.sim_data[item: item + 1]
+        sim_label = self.sim_label[item: item + 1]
+        return (exp_data, exp_label), (sim_data, sim_label)
 
     def __len__(self):
-        return self.exp_data_pair.shape[0]
-
-
-# class KnockDataset(Dataset):
-#     def __init__(self, root_dir, domain, train=False):
-#         self.n_classes = 13
-#         self.train = train
-#         self.test_ratio = 0.2
-#
-#         # 生成训练集
-#         if self.train:
-#             self.x_data_total, self.y_data_total = load_data(root_dir, domain)  # 读取磁盘数据
-#             self.train_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
-#             self.train_labels = np.empty((0,), np.int32)
-#
-#             for i in range(self.n_classes):
-#                 num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
-#                 num_of_data = int(num_of_data * (1-self.test_ratio))
-#                 self.train_data = np.vstack((self.train_data, self.x_data_total[self.y_data_total == i][:num_of_data]))
-#                 self.train_labels = np.hstack((self.train_labels, self.y_data_total[self.y_data_total == i][:num_of_data]))
-#
-#             self.train_data = torch.Tensor(self.train_data)
-#             self.train_labels = torch.Tensor(self.train_labels)
-#         # 生成测试集
-#         else:
-#             self.x_data_total_source, self.y_data_total_source = load_data(root_dir, domain[0])  # 读取实验数据
-#             self.x_data_total_target, self.y_data_total_target = load_data(root_dir, domain[1])  # 读取模拟数据
-#             self.test_data = np.empty((0, self.x_data_total_source.shape[1], self.x_data_total_source.shape[2]), dtype=np.float32)
-#             self.test_labels = np.empty((0,), np.int32)
-#
-#             for i in range(self.n_classes):
-#                 num_of_data = self.y_data_total_source[self.y_data_total_source == i].shape[0]
-#                 num_of_data = int(num_of_data * (1-self.test_ratio))
-#                 self.test_data = np.vstack(
-#                     (self.test_data, self.x_data_total_source[self.y_data_total_source == i][num_of_data:]))
-#                 self.test_labels = np.hstack(
-#                     (self.test_labels, self.y_data_total_source[self.y_data_total_source == i][num_of_data:]))
-#
-#             for i in range(self.n_classes):
-#                 num_of_data = self.y_data_total_target[self.y_data_total_target == i].shape[0]
-#                 num_of_data = int(num_of_data * (1-self.test_ratio))
-#                 self.test_data = np.vstack(
-#                     (self.test_data, self.x_data_total_target[self.y_data_total_target == i][num_of_data:]))
-#                 self.test_labels = np.hstack(
-#                     (self.test_labels, self.y_data_total_target[self.y_data_total_target == i][num_of_data:]))
-#
-#             self.test_data = torch.Tensor(self.test_data)
-#             self.test_labels = torch.Tensor(self.test_labels)
-#
-#     def __getitem__(self, index):
-#         if self.train:
-#             img = self.train_data[index: index + 1]
-#             label = int(self.train_labels[index: index + 1])
-#         else:
-#             img = self.test_data[index: index + 1]
-#             label = int(self.test_labels[index: index + 1])
-#         return img, label
-#
-#     def __len__(self):
-#         if self.train:
-#             return len(self.train_data)
-#         else:
-#             return len(self.test_data)
+        return self.exp_data.shape[0]
 
 
 class BalancedBatchSampler(BatchSampler):
@@ -443,7 +390,7 @@ class BalancedBatchSampler(BatchSampler):
 
 
 if __name__ == '__main__':
-    root_dir = 'Knock_dataset/feature_data/stft_noisy_data'
+    root_dir = '../Knock_dataset/feature_data/stft_noisy_data'
     domain = 'sim_data'
 
     # train_dataset = KnockDataset(root_dir, domain, train=True)

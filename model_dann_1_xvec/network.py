@@ -1,7 +1,27 @@
 import torch.nn as nn
-from Knock_DANN.functions import ReverseLayerF
 import torch.nn.functional as F
 import torch
+from torch.autograd import Function
+
+
+class L2_norm(nn.Module):
+    def __init__(self):
+        super(L2_norm, self).__init__()
+
+    def forward(self, x):
+        return F.normalize(x, p=2, dim=-1)
+
+
+class ReverseLayerF(Function):
+    @staticmethod
+    def forward(ctx, x, alpha):
+        ctx.alpha = alpha
+        return x.view_as(x)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        output = grad_output.neg() * ctx.alpha
+        return output, None
 
 
 class TDNN(nn.Module):
@@ -87,12 +107,15 @@ class X_vector(nn.Module):
         std = torch.var(tdnn5_out, 1)
         stat_pooling = torch.cat((mean, std), 1)
 
-        # sound embedding
+        # Fully-connected
         x_vec = self.segment6(stat_pooling)
         segment7_out = self.segment7(x_vec)
         linear_output = self.output(segment7_out)
-        predictions = self.softmax(linear_output)
-        return x_vec, x_vec, linear_output
+
+        # Softmax
+        # predictions = self.softmax(linear_output)
+
+        return x_vec, segment7_out, linear_output
 
 
 class time_x_vec_DANN(nn.Module):
@@ -105,9 +128,10 @@ class time_x_vec_DANN(nn.Module):
         # (2) Label predictor
         # Layer 1
         self.label_predictor = nn.Sequential()
-        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size, 256))
-        self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(256))
-        self.label_predictor.add_module('lp_prelu1', nn.PReLU())
+        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size, triplet_output_size))
+
+        # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(triplet_output_size))
+        # self.label_predictor.add_module('lp_prelu1', nn.PReLU())
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
 
         # Layer 2
@@ -115,19 +139,19 @@ class time_x_vec_DANN(nn.Module):
         # self.class_classifier.add_module('lp_bn2', nn.BatchNorm1d(64))
         # self.class_classifier.add_module('lp_relu2', nn.ReLU(True))
 
-        # Output Layer
-        self.label_predictor.add_module('lp_fc3', nn.Linear(256, triplet_output_size))
+        # Layer 3
+        # self.label_predictor.add_module('lp_fc3', nn.Linear(triplet_output_size, triplet_output_size))
         # self.class_classifier.add_module('c_softmax', nn.LogSoftmax(dim=1))
 
         # (3) Domain classifier
         # Layer 1
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size, 256))
-        self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(256))
+        self.domain_classifier.add_module('dc_fc1', nn.Linear(pair_output_size, pair_output_size))
+        # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(pair_output_size))
         self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
         # Layer 2
-        self.domain_classifier.add_module('dc_fc2', nn.Linear(256, pair_output_size))
+        # self.domain_classifier.add_module('dc_fc2', nn.Linear(pair_output_size, pair_output_size))
         # self.domain_classifier.add_module('dc_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha):
@@ -153,9 +177,10 @@ class time_freq_x_vec_DANN(nn.Module):
         # (2) Label predictor
         # Layer 1
         self.label_predictor = nn.Sequential()
-        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, 512))
-        self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
-        self.label_predictor.add_module('lp_prelu1', nn.PReLU())
+        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.label_predictor.add_module('lp_l2norm', L2_norm())
+        # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
+
         # self.class_classifier.add_module('lp_drop1', nn.Dropout())
 
         # ------------------------------ Additional Layer for Test -------------------------------------
@@ -165,18 +190,19 @@ class time_freq_x_vec_DANN(nn.Module):
         # ----------------------------------------------------------------------------------------------
 
         # Layer 2
-        self.label_predictor.add_module('lp_fc3', nn.Linear(512, triplet_output_size))
+        # self.label_predictor.add_module('lp_fc3', nn.Linear(triplet_output_size, triplet_output_size))
         # self.class_classifier.add_module('c_softmax', nn.LogSoftmax(dim=1))
 
         # (3) Domain classifier
         # Layer 1
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, 512))
-        self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
-        self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
+        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.label_predictor.add_module('dc_l2norm', L2_norm())
+        # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
+        # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())
 
         # Layer 2
-        self.domain_classifier.add_module('dc_fc2', nn.Linear(512, pair_output_size))
+        # self.domain_classifier.add_module('dc_fc2', nn.Linear(512, pair_output_size))
         # self.domain_classifier.add_module('dc_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha):
