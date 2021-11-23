@@ -83,12 +83,12 @@ class TDNN(nn.Module):
 class X_vector(nn.Module):
     def __init__(self, input_dim, tdnn_embedding_size, n_class=2):
         super(X_vector, self).__init__()
-        self.tdnn1 = TDNN(input_dim=input_dim, output_dim=512, context_size=5, dilation=1, dropout_p=0.5)
-        self.tdnn2 = TDNN(input_dim=512, output_dim=512, context_size=3, dilation=1, dropout_p=0.5)
-        self.tdnn3 = TDNN(input_dim=512, output_dim=512, context_size=2, dilation=2, dropout_p=0.5)
-        self.tdnn4 = TDNN(input_dim=512, output_dim=512, context_size=1, dilation=1, dropout_p=0.5)
-        self.tdnn5 = TDNN(input_dim=512, output_dim=512, context_size=1, dilation=3, dropout_p=0.5)
-        self.segment6 = nn.Linear(1024, tdnn_embedding_size)
+        self.tdnn1 = TDNN(input_dim=input_dim, output_dim=256, context_size=5, dilation=1, dropout_p=0.5)
+        self.tdnn2 = TDNN(input_dim=256, output_dim=256, context_size=3, dilation=1, dropout_p=0.5)
+        self.tdnn3 = TDNN(input_dim=256, output_dim=256, context_size=2, dilation=2, dropout_p=0.5)
+        self.tdnn4 = TDNN(input_dim=256, output_dim=256, context_size=1, dilation=1, dropout_p=0.5)
+        self.tdnn5 = TDNN(input_dim=256, output_dim=256, context_size=1, dilation=3, dropout_p=0.3)
+        self.segment6 = nn.Linear(256 * 2, tdnn_embedding_size)
         self.segment7 = nn.Linear(tdnn_embedding_size, tdnn_embedding_size)
 
         self.output = nn.Linear(tdnn_embedding_size, n_class)

@@ -5,11 +5,10 @@ import librosa.display
 import matplotlib.pyplot as plt
 import sys
 import shutil
-import zipfile
 
 from feature_extraction import load_npy
 from wav_denoising import denoising
-from dataset import src_tgt_intersection
+from model_dann_1_xvec.dataset import src_tgt_intersection
 
 
 def stft_visualization(sound_data, sampling_rate, n_fft=512, win_length=256, hop_length=64):
@@ -51,8 +50,8 @@ def fbank_visualization(sound_data, sampling_rate, n_fft=512, win_length=256, ho
 
 
 if __name__ == '__main__':
-    shutil.rmtree('../output_spec')
-    os.mkdir('../output_spec')
+    shutil.rmtree('../results/output_spec')
+    os.mkdir('../results/output_spec')
 
     root_dir = '../Knock_dataset'
     raw_data_dir = 'raw_data'
@@ -130,7 +129,7 @@ if __name__ == '__main__':
 
         fig.colorbar(img, ax=ax, format="%+2.f dB")
         fig.suptitle(sound_npy_file)
-        plt.savefig(os.path.join('../output_spec', sound_npy_file.split('.')[0]) + '.png')
+        plt.savefig(os.path.join('../results/output_spec', sound_npy_file.split('.')[0]) + '.png')
         plt.cla()
         # plt.close('all')
 

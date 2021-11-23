@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_confusion_matrix(cm, savename, classes, title='Confusion Matrix'):
+def plot_confusion_matrix(cm, save_path, classes, title='Confusion Matrix'):
     plt.figure(figsize=(20, 20), dpi=100)
     np.set_printoptions(precision=1)
 
@@ -34,5 +34,5 @@ def plot_confusion_matrix(cm, savename, classes, title='Confusion Matrix'):
     plt.gcf().subplots_adjust(bottom=0.15)
 
     # show confusion matrix
-    plt.savefig(savename, format='png')
+    plt.savefig(save_path, format='png')
     # plt.show()

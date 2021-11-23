@@ -26,14 +26,10 @@ LABEL_DICT = {
 }
 
 # Network Parameters
-EMBEDDING_SIZE = 256  # Feature Extractor得到的embedding的大小（一维）
-LP_OUTPUT_SIZE = 128  # Label Predictor输出的大小（一维）
-DC_OUTPUT_SIZE = 128  # Domain Classifier输出的大小（一维）
+EMBEDDING_SIZE = 128  # Feature Extractor得到的embedding的大小（一维）
 
 # Loss Related
-TRIPLET_MARGIN = 1  # Triplet loss的margin
-PAIR_MARGIN = 0.25  # Pair-wise loss的margin
-TRIPLET_PAIR_RATIO = 1  # 权重比，Triplet_loss / Pair_wise_loss
+LOSS_WEIGHTS = (1.0, 1.0, 1.0)  # 三个损失(src_lp_err, tgt_lp_loss, dc_err)的权重
 
 # Offline-training Related
 OFF_INITIAL_LR = 1e-3  # 初始学习率
@@ -43,7 +39,6 @@ OFF_LR_ADJUST_RATIO = 0.1  # 学习率调整比例，每OFF_LR_ADJUST_STEP个epo
 
 OFFLINE_EPOCH = 200  # 离线训练epoch数
 NUM_SAMPLES_PER_CLASS = 2  # Triplet-loss BalancedBatchSampler中每类样本的取样个数，决定了triplet的batch大小
-PAIR_WISE_BATCH = 40  # Pair-wise Dataset的batch大小
 
 
 # Online-training Related
