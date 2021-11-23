@@ -1,45 +1,12 @@
 import torch
-from model_dann_xvec.config import *
-
 import numpy as np
 import sys
 import os
 import time
 from sklearn.metrics import confusion_matrix
 
-
-# 计算两个向量组之间的欧式距离
-def cal_euclidean(embedding, mean_vec):
-    ecu_sim = np.empty(shape=(0, mean_vec.shape[0]))
-    for i in range(0, embedding.shape[0]):
-        single_sim = np.square(mean_vec-embedding[i, :]).sum(1)[np.newaxis, :]
-        ecu_sim = np.vstack((ecu_sim, single_sim))
-    return ecu_sim
-
-
-# generate the mean vectors of the support set
-def support_mean_vec_generation(model, support_set, cuda, spec_diff=[]):
-    support_mean_vec = []
-    x_data_support_set = support_set[0]
-    y_data_support_set = support_set[1]
-    support_label_set = list(set(list(np.array(y_data_support_set, dtype=np.int32))))
-    support_label_set.sort()
-
-    if isinstance(spec_diff, torch.Tensor):
-        x_data_support_set = x_data_support_set + spec_diff
-
-    with torch.no_grad():
-        model.eval()
-        if cuda:
-            model.cuda()
-            x_data_support_set = x_data_support_set.cuda()
-        support_embedding, _, _ = model(input_data=x_data_support_set, alpha=0)
-        for label in iter(support_label_set):
-            temp = support_embedding[y_data_support_set == label]
-            temp = np.mean(np.array(temp.cpu()), axis=0)
-            support_mean_vec.append(temp)
-        support_mean_vec = np.array(support_mean_vec)
-    return support_mean_vec, support_label_set
+from model_dann_1_xvec.config import *
+from trainer_utils import *
 
 
 def transfer_baseline_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
@@ -82,7 +49,6 @@ def transfer_baseline_fit(train_loader, val_loader, model, loss_fn, optimizer, s
     return exp_time
 
 
-# Pair-wise loss for domain classifier
 def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
     model.train()
 
@@ -189,95 +155,6 @@ def train_epoch_triplet_pair(train_loader, model, loss_fn, optimizer, cuda, epoc
     return src_err_lp, tgt_err_lp, err_dc
 
 
-# Softmax loss for domain classifier
-def train_epoch_triplet_softmax(train_loader, model, loss_fn, optimizer, cuda, metrics, epoch, n_epochs):
-    for metric in metrics:
-        metric.reset()
-
-    model.train()
-
-    source_train_loader = train_loader[0]
-    target_train_loader = train_loader[1]
-    len_dataloader = max(len(source_train_loader), len(target_train_loader))
-    source_iter = iter(source_train_loader)
-    target_iter = iter(target_train_loader)
-
-    for i in range(len_dataloader):
-
-        p = float(i + epoch * len_dataloader) / (n_epochs * len_dataloader)
-        alpha = 2. / (1. + np.exp(-10 * p)) - 1
-
-        ### training model using source data
-        # 加载Source Data
-        data_source = source_iter.next()
-        s_sound, s_label = data_source
-        s_sound = s_sound.squeeze()  # 删除channel dimension
-        batch_size = len(s_label)
-        s_domain_label = torch.zeros(batch_size).long()
-        s_label = s_label if len(s_label) > 0 else None
-        if cuda:
-            s_sound = s_sound.cuda()
-            s_label = s_label.cuda()
-            s_domain_label = s_domain_label.cuda()
-        # 前向传播
-        model.zero_grad()
-        s_class_output, s_domain_output, _ = model(input_data=s_sound, alpha=alpha)
-        # triplet-loss
-        if type(s_class_output) not in (tuple, list):
-            s_class_output = (s_class_output,)
-        s_triple_loss_inputs = s_class_output
-        if s_label is not None:
-            s_label = (s_label,)
-            s_triple_loss_inputs += s_label
-        s_triplet_loss_outputs, _ = loss_fn[0](*s_triple_loss_inputs)
-        err_s_label = s_triplet_loss_outputs
-        # domain loss
-        err_s_domain = loss_fn[1](s_domain_output, s_domain_label)
-
-        ### training model using target data
-        # 加载Target Data
-        data_target = target_iter.next()
-        t_sound, t_label = data_target
-        t_sound = t_sound.squeeze()  # 删除channel dimension
-        batch_size = len(t_sound)
-        t_domain_label = torch.ones(batch_size).long()
-        if cuda:
-            t_sound = t_sound.cuda()
-            t_label = t_label.cuda()
-            t_domain_label = t_domain_label.cuda()
-        # 前向传播
-        t_class_output, t_domain_output, _ = model(input_data=t_sound, alpha=alpha)
-        # triplet-loss
-        if type(t_class_output) not in (tuple, list):
-            t_class_output = (t_class_output,)
-        t_triple_loss_inputs = t_class_output
-        if t_label is not None:
-            t_label = (t_label,)
-            t_triple_loss_inputs += t_label
-        t_triplet_loss_outputs, _ = loss_fn[0](*t_triple_loss_inputs)
-        err_t_label = t_triplet_loss_outputs
-        # domain loss
-        err_t_domain = loss_fn[1](t_domain_output, t_domain_label)
-
-        ### 总损失
-        err_total = err_s_domain + err_s_label + err_t_domain + err_t_label
-        err_total.backward()
-        optimizer.step()
-
-        # 打印信息
-        sys.stdout.write('\r epoch: %d, [iter: %d / all %d], err_s_label: %f, err_s_domain: %f, err_t_label: %f, err_t_domain: %f' %
-                         (epoch, i + 1,
-                          len_dataloader,
-                          err_s_label.data.cpu().numpy(),
-                          err_s_domain.data.cpu().numpy(),
-                          err_t_label.data.cpu().numpy(),
-                          err_t_domain.data.cpu().item()))
-        sys.stdout.flush()
-
-    return err_s_label.data.cpu().numpy(), err_s_domain.data.cpu().numpy(), err_t_domain.data.cpu().item(), len_dataloader
-
-
-# Validation on the query set
 def val_epoch(val_loader, model, support_set_mean_vec, support_label_set, cuda):
     n_total = 0
     n_correct = 0

@@ -8,7 +8,7 @@ import shutil
 
 from feature_extraction import load_npy
 from wav_denoising import denoising
-from model_dann_xvec.dataset import src_tgt_intersection
+from model_dann_1_xvec.dataset import src_tgt_intersection
 
 
 def stft_visualization(sound_data, sampling_rate, n_fft=512, win_length=256, hop_length=64):

@@ -1,11 +1,11 @@
 from torch.optim import lr_scheduler
 import torch.optim as optim
 import torch.utils.data
-from model_dann_xvec.dataset import *
+from model_dann_1_xvec.dataset import *
 from trainer import *
-from model_dann_xvec.online_trainer import *
-from model_dann_xvec.config import *
-from model_dann_xvec.network import X_vector
+from model_dann_1_xvec.online_trainer import *
+from model_dann_1_xvec.config import *
+from model_dann_1_xvec.network import X_vector
 
 
 root_dir = '../Knock_dataset/feature_data/fbank_denoised_data'

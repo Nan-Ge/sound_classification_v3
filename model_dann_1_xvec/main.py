@@ -2,26 +2,20 @@ from torch.optim import lr_scheduler
 import torch.optim as optim
 import torch.utils.data
 import random
-from model_dann_xvec.dataset import *
+from model_dann_1_xvec.dataset import *
 from offline_trainer import *
 from online_trainer import *
-from model_dann_xvec.config import *
+from model_dann_1_xvec.config import *
 from utils.confusion_matrix_plot import plot_confusion_matrix
 
 
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
 root_dir = './Knock_dataset/feature_data/fbank_denoised_data'
-source_domain = 'exp_data'
-target_domain = 'sim_data'
+src_dmn = 'exp_data'
+tgt_dmn = 'sim_data'
 
 cuda = torch.cuda.is_available()
 kwargs = {}
-
-# 常规的Train-Test split：训练集的所有label与测试集所有label相同
-# source_train_dataset = KnockDataset(root_dir, source_domain, train=True)
-# target_train_dataset = KnockDataset(root_dir, target_domain, train=True)
-# domain = (source_domain, target_domain)
-# test_dataset = KnockDataset(root_dir, domain, train=False)
 
 # (1) 数据集
 '''
@@ -43,16 +37,16 @@ kwargs = {}
     用于在线阶段 / Label predictor的准确性测试；
 '''
 
-src_train_dataset = KnockDataset_train(root_dir, source_domain, SUPPORT_SET_LABEL)
-tgt_train_dataset = KnockDataset_train(root_dir, target_domain, SUPPORT_SET_LABEL)
+src_train_dataset = KnockDataset_train(root_dir, src_dmn, SUPPORT_SET_LABEL)
+tgt_train_dataset = KnockDataset_train(root_dir, tgt_dmn, SUPPORT_SET_LABEL)
 
-src_val_dataset = KnockDataset_val(root_dir, source_domain, SUPPORT_SET_LABEL)
-tgt_val_dataset = KnockDataset_val(root_dir, target_domain, SUPPORT_SET_LABEL)
+src_val_dataset = KnockDataset_val(root_dir, src_dmn, SUPPORT_SET_LABEL)
+tgt_val_dataset = KnockDataset_val(root_dir, tgt_dmn, SUPPORT_SET_LABEL)
 
 pair_wise_dataset = KnockDataset_pair(root_dir, support_label_set=SUPPORT_SET_LABEL)
 
-support_dataset = KnockDataset_test(root_dir, target_domain, SUPPORT_SET_LABEL)
-query_dataset = KnockDataset_test(root_dir, source_domain, SUPPORT_SET_LABEL)
+support_dataset = KnockDataset_test(root_dir, tgt_dmn, SUPPORT_SET_LABEL)
+query_dataset = KnockDataset_test(root_dir, src_dmn, SUPPORT_SET_LABEL)
 
 print("数据集划分情况：")
 print("Src_Triplet_Train(%d), Src_Val(%d), Tgt_Triplet_Train(%d), Tgt_Val(%d)" % (len(src_train_dataset.train_label),
@@ -93,9 +87,9 @@ offline_val_loader = (src_val_loader, tgt_val_loader)
 
 
 # (2) 网络、损失函数、优化器
-from model_dann_xvec.network import time_freq_x_vec_DANN
-from model_dann_xvec.losses import OnlineTripletLoss, PairWiseLoss
-from model_dann_xvec.loss_utils import SemihardNegativeTripletSelector, KnockPointPairSelector  # Strategies for selecting triplets within a minibatch
+from model_dann_1_xvec.network import time_freq_x_vec_DANN
+from model_dann_1_xvec.losses import OnlineTripletLoss, PairWiseLoss
+from model_dann_1_xvec.loss_utils import SemihardNegativeTripletSelector, KnockPointPairSelector  # Strategies for selecting triplets within a minibatch
 
 # 网络模型
 freq_size = src_train_dataset.x_data_total.shape[2]
@@ -133,7 +127,7 @@ scheduler = lr_scheduler.StepLR(optimizer, OFF_LR_ADJUST_STEP, gamma=OFF_LR_ADJU
 
 # ////////////////////////////////////////////// Fine-tuning & Testing /////////////////////////////////////////////////
 from utils.fine_tuning_utils import model_parameter_printing
-from model_dann_xvec.network import fine_tuned_DANN_triplet_Net
+from model_dann_1_xvec.network import fine_tuned_DANN_triplet_Net
 
 # (1) 加载Baseline Model & Baseline Model Test
 model_path = '../results/output_model'
@@ -203,5 +197,5 @@ fine_tuning_fit(
 )
 
 # /////////////////////////////////////////////// 可视化观察 ////////////////////////////////////////////////////////////
-from utils.embedding_visualization import t_SNE_visualization
-t_SNE_visualization(src_train_dataset, tgt_train_dataset, baseline_model, cuda, model_list[0])
+from model_dann_2_xvec.utils.embedding_visualization import tsne_plot
+tsne_plot(src_train_dataset, tgt_train_dataset, baseline_model, cuda, model_list[0])
