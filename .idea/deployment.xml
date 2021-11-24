@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="eecyc@202.120.37.116:4793 password" compareModeInSync="SIZE">
+  <component name="PublishConfigData" autoUpload="Always" serverName="GPU_sound_classification" compareModeInSync="SIZE">
     <serverData>
-      <paths name="eecyc@202.120.37.116:4793 password">
+      <paths name="GPU_modal_sound">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="GPU_sound_classification">
         <serverdata>
           <mappings>
             <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
@@ -10,12 +17,24 @@
           <excludedPaths>
             <excludedPath path="/Knock_dataset" />
             <excludedPath path="/results" />
-            <excludedPath local="true" path="$PROJECT_DIR$/Knock_dataset" />
-            <excludedPath local="true" path="$PROJECT_DIR$/results" />
-            <excludedPath local="true" path="$PROJECT_DIR$/可视化结果" />
           </excludedPaths>
         </serverdata>
       </paths>
+      <paths name="baka@192.168.1.110:22">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="node15">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
     </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
   </component>
 </project>
