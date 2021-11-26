@@ -32,7 +32,7 @@ def denoising(sound_data, method='skimage-Visu'):
         return denoise_sound
 
     elif method == 'pywt':
-        threshold = 0.05
+        threshold = 0.1
         wavelet_coeffs = pywt.wavedec(sound_data, wavelet_func, level=max_dec_level)  # 小波分解
         for i in range(1, len(wavelet_coeffs)):
             wavelet_coeffs[i] = pywt.threshold(wavelet_coeffs[i], threshold * max(wavelet_coeffs[i]))  # 阈值化

@@ -126,7 +126,7 @@ def get_label_object2(name):
 def src_tgt_intersection(root_dir):
     # 取模拟数据和实际数据的共同部分
     src_files = os.listdir(os.path.join(root_dir, 'exp_data'))
-    tgt_files = os.listdir(os.path.join(root_dir, 'sim_data'))
+    tgt_files = os.listdir(os.path.join(root_dir, 'sim_data_aug'))
     common_files = [file for file in src_files if file in tgt_files]
 
     # 过滤common数据
@@ -137,7 +137,7 @@ def src_tgt_intersection(root_dir):
 
 def balanced_sampling_on_src_tgt(root_dir, file_name):
     src_sample = np.load(os.path.join(root_dir, 'exp_data', file_name)).astype(np.float32)
-    tgt_sample = np.load(os.path.join(root_dir, 'sim_data', file_name)).astype(np.float32)
+    tgt_sample = np.load(os.path.join(root_dir, 'sim_data_aug', file_name)).astype(np.float32)
 
     balan_dif = src_sample.shape[0] - tgt_sample.shape[0]
 
@@ -177,7 +177,7 @@ def load_data(root_dir, domain, train_flag):
                 src_data, tgt_data = balanced_sampling_on_src_tgt(root_dir=root_dir, file_name=file_name)
                 if domain == 'exp_data':
                     np_data = src_data
-                elif domain == 'sim_data':
+                elif domain == 'sim_data_aug':
                     np_data = tgt_data
 
                 for data in src_data:

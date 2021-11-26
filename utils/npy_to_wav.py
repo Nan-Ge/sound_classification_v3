@@ -3,7 +3,7 @@ import scipy.io.wavfile
 import os
 from sklearn.preprocessing import MinMaxScaler
 
-dataset_path = '../Knock_dataset/raw_data'
+dataset_path = '../Knock_dataset/模拟+实际-板材数据'
 wav_save_path = '../Knock_dataset/wav_data'
 
 domains = ['exp_data', 'sim_data']

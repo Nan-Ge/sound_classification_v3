@@ -19,7 +19,7 @@ class gan_xvec(nn.Module):
         # (2) Domain Classifier
         self.dmn_clr = nn.Sequential()
         # Layer 1
-        self.dmn_clr.add_module('dc_fc1', nn.Linear(xvec_embed_len, xvec_embed_len * 4))
+        self.dmn_clr.add_module('dc_fc1', nn.Linear(xvec_embed_len * 1, xvec_embed_len * 4))
         self.dmn_clr.add_module('dc_bn1', nn.BatchNorm1d(xvec_embed_len * 4))
         self.dmn_clr.add_module('dc_prelu1', nn.PReLU())
         # Layer 2
@@ -33,7 +33,7 @@ class gan_xvec(nn.Module):
         # (3) Label Predictor
         self.lbl_pred = nn.Sequential()
         # Layer 1
-        self.lbl_pred.add_module('lp_fc1', nn.Linear(xvec_embed_len, xvec_embed_len * 4))
+        self.lbl_pred.add_module('lp_fc1', nn.Linear(xvec_embed_len * 1, xvec_embed_len * 4))
         self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(xvec_embed_len * 4))
         self.lbl_pred.add_module('lp_prelu1', nn.PReLU())
         # Layer 2

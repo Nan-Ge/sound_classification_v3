@@ -11,7 +11,7 @@ import config
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
 root_dir = '../Knock_dataset/feature_data/fbank_denoised_data'
 src_dmn = 'exp_data'
-tgt_dmn = 'sim_data'
+tgt_dmn = 'sim_data_aug'
 cuda = torch.cuda.is_available()
 torch.cuda.empty_cache()
 
