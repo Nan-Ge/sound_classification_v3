@@ -65,7 +65,7 @@ def get_label_obj_face(file_name):
         print(file_name)
         return np.int64(0)
     else:
-        return res
+        return res - 1
 
 
 def get_label_object(name):
@@ -123,10 +123,10 @@ def get_label_object2(name):
     return np.int64(9)
 
 
-def src_tgt_intersection(root_dir):
+def src_tgt_intersection(dataset_dir, dom):
     # 取模拟数据和实际数据的共同部分
-    src_files = os.listdir(os.path.join(root_dir, 'exp_data'))
-    tgt_files = os.listdir(os.path.join(root_dir, 'sim_data_aug'))
+    src_files = os.listdir(os.path.join(dataset_dir, dom[0]))
+    tgt_files = os.listdir(os.path.join(dataset_dir, dom[1]))
     common_files = [file for file in src_files if file in tgt_files]
 
     # 过滤common数据
@@ -135,9 +135,9 @@ def src_tgt_intersection(root_dir):
     return common_files
 
 
-def balanced_sampling_on_src_tgt(root_dir, file_name):
-    src_sample = np.load(os.path.join(root_dir, 'exp_data', file_name)).astype(np.float32)
-    tgt_sample = np.load(os.path.join(root_dir, 'sim_data_aug', file_name)).astype(np.float32)
+def balanced_sampling_on_src_tgt(dataset_dir, dom, file_name):
+    src_sample = np.load(os.path.join(dataset_dir, dom[0], file_name)).astype(np.float32)
+    tgt_sample = np.load(os.path.join(dataset_dir, dom[1], file_name)).astype(np.float32)
 
     balan_dif = src_sample.shape[0] - tgt_sample.shape[0]
 
@@ -153,17 +153,17 @@ def balanced_sampling_on_src_tgt(root_dir, file_name):
     return src_sample, tgt_sample
 
 
-def load_data(root_dir, domain, train_flag):
+def load_data(dataset_dir, dom, train_flag):
     '''
-    :param root_dir: 数据集根目录
-    :param domain: 数据集域，exp for 实际敲击数据，sim for 模拟数据
+    :param dataset_dir: 数据集根目录
+    :param dom: 数据集域，exp for 实际敲击数据，sim for 模拟数据
     :param train_flag: load_data读取数据的使用目的，为1表示训练（需要src-tgt均衡），为0表示测试（不需要src-tgt均衡）
     :return: 随机排序后的特征和标签
     '''
     shuffle_random_state = 20
 
     # 过滤common数据
-    common_files = src_tgt_intersection(root_dir=root_dir)
+    common_files = src_tgt_intersection(dataset_dir=dataset_dir, dom=dom)
 
     # 读取 + 合并数据
     if train_flag == 1:
@@ -174,11 +174,7 @@ def load_data(root_dir, domain, train_flag):
             file_name = str(file)
             name, postfix = file_name.split('.')
             if postfix == 'npy':
-                src_data, tgt_data = balanced_sampling_on_src_tgt(root_dir=root_dir, file_name=file_name)
-                if domain == 'exp_data':
-                    np_data = src_data
-                elif domain == 'sim_data_aug':
-                    np_data = tgt_data
+                src_data, tgt_data = balanced_sampling_on_src_tgt(dataset_dir=dataset_dir, file_name=file_name, dom=dom)
 
                 for data in src_data:
                     src_x_list.append(data)
@@ -199,7 +195,7 @@ def load_data(root_dir, domain, train_flag):
         return (src_x_total, src_y_total), (tgt_x_total, tgt_y_total)
 
     elif train_flag == 0:
-        path = os.path.join(root_dir, domain)
+        path = os.path.join(dataset_dir, dom)
         x_data_list, y_data_list = [], []
         for i, file in enumerate(common_files):
             file_name = str(file)

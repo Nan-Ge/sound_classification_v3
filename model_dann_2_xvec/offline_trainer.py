@@ -83,12 +83,14 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
 
             dmn_label = dmn_label.cuda()
 
-        src_feat, src_lp_output, src_dc_output = model(input_data=src_data, alpha=alpha)  # Source Domain 前向传播
-        tgt_feat, tgt_lp_output, tgt_dc_output = model(input_data=tgt_data, alpha=alpha)  # Target Domain 前向传播
+        # Source Domain 前向传播
+        src_feat, src_lp_output, src_dc_output = model(input_data=src_data, alpha=alpha, eps=config.NOISE_EPS)
+        # Target Domain 前向传播
+        tgt_feat, tgt_lp_output, tgt_dc_output = model(input_data=tgt_data, alpha=alpha, eps=config.NOISE_EPS)
 
         # (1) Label Predictor Loss
-        src_lp_err = loss_fn(src_lp_output, src_label - 1)
-        tgt_lp_err = loss_fn(tgt_lp_output, tgt_label - 1)
+        src_lp_err = loss_fn(src_lp_output, src_label)
+        tgt_lp_err = loss_fn(tgt_lp_output, tgt_label)
 
         # (2) Domain Regressor Loss
         dc_output = torch.cat((src_dc_output, tgt_dc_output), dim=0)
@@ -124,13 +126,13 @@ def val_epoch(val_loader, model, cuda):
         val_iter = iter(val_loader)
         val_sound, val_label = val_iter.next()
         val_sound = val_sound.squeeze()  # 删除channel dimension
-        val_label = np.array(val_label.cpu()) - 1
+        val_label = np.array(val_label.cpu())
 
         if cuda:
             val_sound = val_sound.cuda()
 
         # 前向传播
-        val_embed, val_pred, _ = model(input_data=val_sound, alpha=0)
+        val_embed, val_pred, _ = model(input_data=val_sound, alpha=0, eps=config.NOISE_EPS)
         pred_label = torch.argmax(val_pred, dim=1)
         pred_label = np.array(pred_label.cpu())
 

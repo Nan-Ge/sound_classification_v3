@@ -3,54 +3,54 @@ import shutil
 
 import librosa
 import numpy as np
-import random
 
-from utils.wav_denoising import denoising
+from audio_preprocessing.wav_denoising import denoising
 from utils.audio_data_load import arg_list, load_npy
 
 
 def feat_calc(audio_data, kargs, feat_type):
     if feat_type == 'stft':
         linear = librosa.stft(audio_data, n_fft=kargs.n_fft, win_length=kargs.win_len, hop_length=kargs.hop_len)
-        linear = linear.T
         mag, _ = librosa.magphase(linear)
-        mag_T = mag.T
 
-        mu = np.mean(mag_T, 0, keepdims=True)
-        std = np.std(mag_T, 0, keepdims=True)
-        normalized_spec = (mag_T - mu) / (std + 1e-5)
+        mu = np.mean(mag, 0, keepdims=True)
+        std = np.std(mag, 0, keepdims=True)
+        normalized_spec = (mag - mu) / (std + 1e-5)
 
-        return normalized_spec.T
+        return normalized_spec
 
     elif feat_type == 'fbank':
-        mel_spec = librosa.feature.melspectrogram(audio_data, kargs.fs, n_fft=kargs.n_fft, win_length=kargs.win_len,
-                                                  hop_length=kargs.hop_len, n_mels=kargs.n_mels)
+        mel_spec = librosa.feature.melspectrogram(
+            audio_data,
+            kargs.fs,
+            n_fft=kargs.n_fft,
+            win_length=kargs.win_len,
+            hop_length=kargs.hop_len,
+            n_mels=kargs.n_mels)
 
-        log_mel_spec = librosa.power_to_db(mel_spec, ref=np.min)  # 转换为dB
+        mu = np.mean(mel_spec, 0, keepdims=True)
+        std = np.std(mel_spec, 0, keepdims=True)
+        normalized_mel_spec = (mel_spec - mu) / (std + 1e-5)
 
-        mu = np.mean(log_mel_spec, 0, keepdims=True)
-        std = np.std(log_mel_spec, 0, keepdims=True)
-        normalized_mel_spec = (log_mel_spec - mu) / (std + 1e-5)
-
-        return normalized_mel_spec.T
+        return normalized_mel_spec
 
 
 if __name__ == '__main__':
     root_dir = '../Knock_dataset'
-    domains = ['exp_data', 'sim_data_aug']
+    domains = ['exp_data', 'sim_data']
     raw_data_dir = 'raw_data'
-    feat_data_dir = 'feature_data/fbank_denoised_data'
+    feat_data_dir = 'feature_data/stft_deno_aug'
 
     for i in range(0, 2):
-        shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]))
-        os.mkdir(os.path.join(root_dir, feat_data_dir, domains[i]))
+        shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]), ignore_errors=True)
+        os.makedirs(os.path.join(root_dir, feat_data_dir, domains[i]))
 
     max_len = 6000
     kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40)
-    interval = [0.4, 1.0]
+    interval = [0.5, 1.0]
 
-    feat_type = 'fbank'
-    deno_method = 'pywt'  # (skimage-Visu, skimage-Bayes, pywt)
+    feat_type = 'stft'
+    deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
 
     for domain_ in domains:
         path = os.path.join(root_dir, raw_data_dir, domain_)

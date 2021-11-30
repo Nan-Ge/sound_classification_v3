@@ -9,15 +9,14 @@ from utils.confusion_matrix_plot import plot_confusion_matrix
 import config
 
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
-root_dir = '../Knock_dataset/feature_data/fbank_denoised_data'
-src_dmn = 'exp_data'
-tgt_dmn = 'sim_data_aug'
+root_dir = '../Knock_dataset/feature_data/stft_deno_aug'
+dom = ['exp_data', 'sim_data']
 cuda = torch.cuda.is_available()
 torch.cuda.empty_cache()
 
 # (1) 数据集提取
 # 预读取数据
-(src_x_total, src_y_total), (tgt_x_total, tgt_y_total) = load_data(root_dir, [], train_flag=1)
+(src_x_total, src_y_total), (tgt_x_total, tgt_y_total) = load_data(dataset_dir=root_dir, dom=dom, train_flag=1)
 
 # Train
 pair_wise_dataset = KnockDataset_pair(
@@ -49,11 +48,17 @@ from model_dann_1_xvec.losses import OnlineTripletLoss
 from model_dann_1_xvec.loss_utils import SemihardNegativeTripletSelector
 
 # 网络模型
-freq_size = pair_wise_dataset.exp_data.shape[2]
-seq_len = pair_wise_dataset.exp_data.shape[1]
+freq_size = pair_wise_dataset.exp_data.shape[1]
+seq_len = pair_wise_dataset.exp_data.shape[2]
 input_dim = (freq_size, seq_len)
 
-model = gan_xvec(input_dim=input_dim, xvec_embed_len=config.EMBEDDING_SIZE, n_cls=pair_wise_dataset.n_classes)
+model = gan_xvec(
+    input_dim=input_dim,
+    embedDim=config.EMBEDDING_SIZE,
+    n_cls=pair_wise_dataset.n_classes,
+    p_dropout=config.P_DROP
+)
+
 if cuda:
     model.cuda()
 

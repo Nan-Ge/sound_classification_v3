@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 
 
@@ -11,7 +12,14 @@ class arg_list:
         self.window = window
 
 
-def load_npy(audio_filepath, max_len, interval, max_norm=False):
+def am_normalization(audio_data):
+    x = copy.deepcopy(audio_data)
+    x = x - np.mean(x)
+    x = x / np.max(np.abs(x))
+    return x
+
+
+def load_npy(audio_filepath, max_len, interval, am_norm=False):
     audio_data = np.load(audio_filepath).astype(np.float64)
     data_len = audio_data.shape[1]
 
@@ -22,7 +30,8 @@ def load_npy(audio_filepath, max_len, interval, max_norm=False):
 
     audio_data = audio_data[:, int(data_len * interval[0]): int(data_len * interval[1])]
 
-    if max_norm:
-        audio_data = audio_data / np.max(audio_data)
+    if am_norm:
+        for index, data in enumerate(audio_data):
+            audio_data[index] = am_normalization(audio_data)
 
     return audio_data

@@ -7,7 +7,7 @@ import sys
 import shutil
 
 from utils.audio_data_load import load_npy, arg_list
-from utils.wav_denoising import denoising
+from audio_preprocessing.wav_denoising import denoising
 from model_dann_1_xvec.dataset import src_tgt_intersection
 
 
@@ -16,38 +16,31 @@ def spec_calc(audio_data, feat_type, kargs):
         # STFT calculation
         linear_spec = librosa.stft(audio_data, n_fft=kargs.n_fft, win_length=kargs.win_len, hop_length=kargs.hop_len, window=kargs.window)
         mag_spec, _ = librosa.magphase(linear_spec)
-        mag_spec_db = librosa.amplitude_to_db(mag_spec, ref=np.max)
+        # mag_spec = librosa.amplitude_to_db(mag_spec, ref=np.max)
 
         # STFT normalization
-        mu = np.mean(mag_spec, 0, keepdims=True)
-        std = np.std(mag_spec, 0, keepdims=True)
+        mu = np.mean(mag_spec, axis=0, keepdims=True)
+        std = np.std(mag_spec, axis=0, keepdims=True)
         normalized_mag_spec = (mag_spec - mu) / (std + 1e-5)
 
-        # 频率轴变量
-        freq_upper_limit = kargs.fs / 2
-        f = kargs.fs * np.array(range(int(1 + kargs.n_fft / 2))) / (kargs.n_fft / 2)
-        index = np.where(f < freq_upper_limit)  # 设定频率范围
-        end = index[0][-1]
-        f = f[:end]
-        # 时间轴变量
-        t = np.array(range(int(audio_data.shape[0] / kargs.hop_len + 1))) / kargs.fs
-
-        # return t, f, normalized_mag_spec[0:end, :]
-
-        return mag_spec_db
+        return normalized_mag_spec
 
     elif feat_type == 'fbank':
-        # 提取 mel spectrogram feature
-        mel_spec = librosa.feature.melspectrogram(audio_data, kargs.fs, n_fft=kargs.n_fft,
-                                                  win_length=kargs.win_len, hop_length=kargs.hop_len,
-                                                  n_mels=kargs.n_mels)
-        log_mel_spec = librosa.power_to_db(mel_spec, ref=np.max)  # 转换为dB
+        # Mel_spec calculation
+        mel_spec = librosa.feature.melspectrogram(
+            audio_data,
+            kargs.fs,
+            n_fft=kargs.n_fft,
+            win_length=kargs.win_len, hop_length=kargs.hop_len,
+            n_mels=kargs.n_mels)
+        # mel_spec = librosa.power_to_db(mel_spec, ref=np.max)  # 转换为dB
 
-        # dB归一化
-        # max_log_mel = np.max(np.absolute(log_mel_spec))
-        # norm_log_mel_spec = 10 * log_mel_spec/max_log_mel
+        # Mel_spec normalization
+        mu = np.mean(mel_spec, 0, keepdims=True)
+        std = np.std(mel_spec, 0, keepdims=True)
+        normalized_mel_spec = (mel_spec - mu) / (std + 1e-5)
 
-        return log_mel_spec
+        return normalized_mel_spec
 
 
 if __name__ == '__main__':
@@ -57,17 +50,16 @@ if __name__ == '__main__':
     root_dir = '../Knock_dataset'
     raw_data_dir = 'raw_data'
 
-    sound_npy_files = src_tgt_intersection(os.path.join(root_dir, raw_data_dir))
+    sound_npy_files = src_tgt_intersection(os.path.join(root_dir, raw_data_dir), dom=['exp_data', 'sim_data'])
     domains = ['exp_data', 'sim_data', 'sim_data_aug']
 
     max_len = 6000
     interval = [0.0, 1.0]
 
     feat_type = 'stft'
-    deno_method = 'pywt'  # (skimage-Visu, skimage-Bayes, pywt)
-    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40, window='hamming')
-
     y_axis_type = 'linear'
+    deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
+    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40, window='hann')
 
     for index, sound_npy_file in enumerate(sound_npy_files):
         fig, ax = plt.subplots(nrows=2, ncols=2)

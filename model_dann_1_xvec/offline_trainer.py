@@ -10,6 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.metrics import confusion_matrix
 from utils.confusion_matrix_plot import plot_confusion_matrix
 
+
 # 计算两个向量组之间的欧式距离
 def cal_euclidean(embedding, mean_vec):
     ecu_sim = np.empty(shape=(0, mean_vec.shape[0]))

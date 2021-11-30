@@ -12,7 +12,7 @@ from utils.feature_extraction import load_npy
 if __name__ == '__main__':
 
     max_len = 6000
-    interval = [0, 1]
+    interval = [0.0, 1.0]
 
     fx = (
         AudioEffectsChain()
@@ -27,21 +27,22 @@ if __name__ == '__main__':
         )
     )
 
-    sim_data_aug_dir = '../Knock_dataset/raw_data/sim_data_aug'
-    sim_data_dir = '../Knock_dataset/raw_data/sim_data'
+    sim_data_aug_dir = '../../Knock_dataset/raw_data/sim_data_aug'
+    sim_data_dir = '../../Knock_dataset/raw_data/sim_data'
 
-    shutil.rmtree(sim_data_aug_dir)
+    shutil.rmtree(sim_data_aug_dir, ignore_errors=True)
     os.mkdir(sim_data_aug_dir)
 
     sim_audio_files = os.listdir(sim_data_dir)
 
     for index, audio_file in enumerate(sim_audio_files):
 
-
+        # (1) 输出混响后的WAV文件
         # inFile = os.path.join(sim_data_dir, audio_file)
         # outFile = os.path.join(sim_data_aug_dir, audio_file.replace('.wav', '.ogg'))
         # fx(inFile, outFile)
 
+        # (2) 输出混响后的npy文件
         audio_arr = load_npy(audio_filepath=os.path.join(sim_data_dir, audio_file),
                              max_len=max_len,
                              interval=interval)
