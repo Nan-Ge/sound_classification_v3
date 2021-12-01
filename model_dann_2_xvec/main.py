@@ -48,15 +48,16 @@ from model_dann_1_xvec.losses import OnlineTripletLoss
 from model_dann_1_xvec.loss_utils import SemihardNegativeTripletSelector
 
 # 网络模型
-freq_size = pair_wise_dataset.exp_data.shape[1]
-seq_len = pair_wise_dataset.exp_data.shape[2]
+freq_size = pair_wise_dataset.data_shape[1]
+seq_len = pair_wise_dataset.data_shape[2]
 input_dim = (freq_size, seq_len)
 
 model = xvec_dann_orig(
     input_dim=input_dim,
     embedDim=config.EMBEDDING_SIZE,
     n_cls=pair_wise_dataset.n_classes,
-    p_dropout=config.P_DROP
+    p_dropout=config.P_DROP,
+    version=config.XVEC_VERSION
 )
 
 if cuda:
@@ -86,7 +87,7 @@ if config.TRAIN_STAGE:
 from model_dann_2_xvec.utils.embedding_visualization import tsne_plot
 from model_dann_2_xvec.network import ft_xvec_dann_orig
 from model_dann_1_xvec.dataset import KnockDataset_test
-from utils.fine_tuning_utils import model_parameter_printing
+from utils.net_train_utils import model_parameter_printing
 from online_trainer import netFT_fit
 
 
@@ -141,7 +142,10 @@ print('\nBaseline model validation accuracy: %0.2f %%' % (accu * 100))
 #     cuda=cuda)
 
 # (4) 定义Fine-tuning网络及可训练参数
-fine_tuned_model = ft_xvec_dann_orig(baseModel=baseline_model, n_class=len(config.SUPPORT_SET_LABEL))
+fine_tuned_model = ft_xvec_dann_orig(
+    baseModel=baseline_model,
+    n_class=len(config.SUPPORT_SET_LABEL),
+    version=config.XVEC_VERSION)
 
 fixed_module = ['feature_extractor', 'domain_classifier']
 # fixed_module = ['domain_classifier']

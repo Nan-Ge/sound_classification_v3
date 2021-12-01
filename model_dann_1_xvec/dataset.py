@@ -275,6 +275,8 @@ class KnockDataset_val(Dataset):
         self.val_data = torch.Tensor(self.val_data)
         self.val_label = torch.Tensor(self.val_label)
 
+        self.data_shape = self.val_data.shape
+
     def __getitem__(self, index):
         img = self.val_data[index: index + 1]
         label = int(self.val_label[index: index + 1])
@@ -317,6 +319,8 @@ class KnockDataset_test(Dataset):
 
             self.test_data = torch.Tensor(self.test_data)
             self.test_labels = torch.Tensor(self.test_labels)
+
+            self.data_shape = self.test_data.shape
 
     def __getitem__(self, index):
         wav = self.test_data[index: index + 1]
@@ -365,6 +369,8 @@ class KnockDataset_pair(Dataset):
         self.exp_label = torch.Tensor(self.exp_label).long()
         self.sim_data = torch.Tensor(self.sim_data)
         self.sim_label = torch.Tensor(self.sim_label).long()
+
+        self.data_shape = self.exp_data.shape
 
     def __getitem__(self, item):
         exp_data = self.exp_data[item: item + 1]

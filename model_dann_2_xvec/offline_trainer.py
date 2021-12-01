@@ -1,4 +1,6 @@
 import torch
+from torchsummary import summary
+
 import numpy as np
 import sys
 import os
@@ -11,6 +13,11 @@ from model_dann_1_xvec.trainer_utils import *
 
 def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
     exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+    log_save_name_1 = 'model_dann_2_' + exp_time + '.txt'
+
+    with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
+        f.write(str(model))
+
     print('\n--------- Start transfer baseline model training at:' + exp_time + '---------')
 
     for epoch in range(0, n_epochs):
@@ -33,7 +40,6 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
 
         print(', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs))
 
-        log_save_name_1 = 'model_dann_2_' + exp_time + '.txt'
         with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
 
             train_output = '\r epoch: [%d / %d], src_lp_err: %f, tgt_lp_err: %f, dc_err: %f' % \

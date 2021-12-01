@@ -8,7 +8,7 @@ from audio_preprocessing.wav_denoising import denoising
 from utils.audio_data_load import arg_list, load_npy
 
 
-def feat_calc(audio_data, kargs, feat_type):
+def feat_calc(audio_data):
     if feat_type == 'stft':
         linear = librosa.stft(audio_data, n_fft=kargs.n_fft, win_length=kargs.win_len, hop_length=kargs.hop_len)
         mag, _ = librosa.magphase(linear)
@@ -37,7 +37,7 @@ def feat_calc(audio_data, kargs, feat_type):
 
 if __name__ == '__main__':
     root_dir = '../Knock_dataset'
-    domains = ['exp_data', 'sim_data']
+    domains = ['exp_data', 'sim_data_aug']
     raw_data_dir = 'raw_data'
     feat_data_dir = 'feature_data/stft_deno_aug'
 
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                     if domain_ == 'exp_data':
                         data = denoising(data, method=deno_method)
 
-                    feat = feat_calc(audio_data=data, kargs=kargs, feat_type=feat_type)  # fbank feature
+                    feat = feat_calc(audio_data=data)  # fbank feature
                     feat_data.append(feat)
 
                 feat_data_npy = np.array(feat_data)

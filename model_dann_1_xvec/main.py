@@ -128,7 +128,7 @@ scheduler = lr_scheduler.StepLR(optimizer, OFF_LR_ADJUST_STEP, gamma=OFF_LR_ADJU
 
 
 # ////////////////////////////////////////////// Fine-tuning & Testing /////////////////////////////////////////////////
-from utils.fine_tuning_utils import model_parameter_printing
+from utils.net_train_utils import model_parameter_printing
 from model_dann_1_xvec.network import fine_tuned_DANN_triplet_Net
 
 # (1) 加载Baseline Model & Baseline Model Test

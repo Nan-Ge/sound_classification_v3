@@ -141,11 +141,11 @@ class xvecTDNN(nn.Module):
         self.bn_tdnn4 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
         self.dropout_tdnn4 = nn.Dropout(p=p_dropout)
 
-        self.tdnn5 = nn.Conv1d(in_channels=512, out_channels=1024, kernel_size=1, dilation=1)
+        self.tdnn5 = nn.Conv1d(in_channels=512, out_channels=1500, kernel_size=1, dilation=1)
         self.bn_tdnn5 = nn.BatchNorm1d(1024, momentum=0.1, affine=False)
         self.dropout_tdnn5 = nn.Dropout(p=p_dropout)
 
-        self.fc1 = nn.Linear(2048, embedDim)
+        self.fc1 = nn.Linear(3000, embedDim)
         self.bn_fc1 = nn.BatchNorm1d(embedDim, momentum=0.1, affine=False)
         self.dropout_fc1 = nn.Dropout(p=p_dropout)
 
@@ -168,7 +168,7 @@ class xvecTDNN(nn.Module):
             shape = x.size()
             noise = torch.cuda.FloatTensor(shape)
             torch.randn(shape, out=noise)
-            x += noise*eps
+            x += noise * eps
 
         stats = torch.cat((x.mean(dim=2), x.std(dim=2)), dim=1)
         x = self.dropout_fc1(self.bn_fc1(F.relu(self.fc1(stats))))
