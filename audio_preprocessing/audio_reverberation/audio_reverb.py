@@ -48,13 +48,13 @@ if __name__ == '__main__':
                              interval=interval)
 
         # ---- 只处理1个样本 ----
-        aug_audio_arr = fx(audio_arr[0])[np.newaxis, :]
+        # aug_audio_arr = fx(audio_arr[0])[np.newaxis, :]
 
         # ---- 处理所有样本 ----
-        # aug_audio_arr = np.empty(shape=(0, audio_arr.shape[1]), dtype=audio_arr.dtype)
-        # for data in audio_arr:
-        #     aug_data = fx(data)[np.newaxis, :]
-        #     aug_audio_arr = np.concatenate((aug_audio_arr, aug_data), axis=0)
+        aug_audio_arr = np.empty(shape=(0, audio_arr.shape[1]), dtype=audio_arr.dtype)
+        for data in audio_arr:
+            aug_data = fx(data)[np.newaxis, :]
+            aug_audio_arr = np.concatenate((aug_audio_arr, aug_data), axis=0)
 
         np.save(os.path.join(sim_data_aug_dir, audio_file), aug_audio_arr)
         sys.stdout.write('\r Current file %d / %d' % (index + 1, len(sim_audio_files)))

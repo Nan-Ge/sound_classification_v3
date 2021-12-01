@@ -1,5 +1,6 @@
 import os
 import shutil
+import sys
 
 import librosa
 import numpy as np
@@ -47,7 +48,7 @@ if __name__ == '__main__':
 
     max_len = 6000
     kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40)
-    interval = [0.5, 1.0]
+    interval = [0.4, 1.0]
 
     feat_type = 'stft'
     deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
@@ -62,13 +63,15 @@ if __name__ == '__main__':
             if postfix == 'npy':
                 npy_data = load_npy(os.path.join(path, file), max_len=max_len, interval=interval)
                 for data in npy_data:
-                    data = data / max(data)
+                    # data = data / max(data)
+
                     if domain_ == 'exp_data':
                         data = denoising(data, method=deno_method)
 
-                    feat = feat_calc(audio_data=data)  # fbank feature
+                    feat = feat_calc(audio_data=data)
                     feat_data.append(feat)
 
                 feat_data_npy = np.array(feat_data)
                 save_path = os.path.join(root_dir, feat_data_dir, domain_, file)
                 np.save(save_path, feat_data_npy)
+

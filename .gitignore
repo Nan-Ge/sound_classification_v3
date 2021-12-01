@@ -1,7 +1,5 @@
 /Knock_dataset/
-/results/output_model/
-/results/output_training_log/
-/results/output_spec/
+/results/
 /triplet_MNIST_example/
 /可视化结果/
 /test/

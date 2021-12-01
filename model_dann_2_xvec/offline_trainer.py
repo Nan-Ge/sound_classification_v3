@@ -17,6 +17,7 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
 
     with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
         f.write(str(model))
+        f.write("The spectrogram has a size of (%d, %d)" % (train_loader.dataset.data_shape[0], train_loader.dataset.data_shape[1]))
 
     print('\n--------- Start transfer baseline model training at:' + exp_time + '---------')
 
@@ -33,12 +34,18 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
             n_epochs=n_epochs)
 
         # Validation stage [offline_val_loader = (src_val_loader, tgt_val_loader)]
-        accu, _ = val_epoch(
+        accu_src, _ = val_epoch(
+            val_loader=val_loader[0],
+            model=model,
+            cuda=cuda)
+
+        accu_tgt, _ = val_epoch(
             val_loader=val_loader[1],
             model=model,
             cuda=cuda)
 
-        print(', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs))
+        print(', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' %
+              (accu_src * 100, accu_tgt*100, epoch + 1, n_epochs))
 
         with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
 
@@ -46,10 +53,11 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
                            (epoch + 1, n_epochs, src_lp_err, tgt_lp_err, dc_err)
             f.write(train_output)
 
-            test_output = ', validation accuracy of offline training: %.2f %% for %d / %d' % (accu * 100, epoch + 1, n_epochs)
+            test_output = ', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' % \
+                          (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs)
             f.write(test_output)
 
-    model_name = 'model_dann_2_' + exp_time + '_' + str(format(accu, '.2f')) + '.pkl'
+    model_name = 'model_dann_2_' + exp_time + '_' + str(format(accu_src, '.2f')) + '-' + str(format(accu_tgt, '.2f')) + '.pkl'
     model_save_path = os.path.join('../results/output_model', model_name)
     torch.save(model, model_save_path)
     print('\nBaseline Model saved as:', model_save_path)

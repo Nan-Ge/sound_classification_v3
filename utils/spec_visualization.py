@@ -54,7 +54,7 @@ if __name__ == '__main__':
     domains = ['exp_data', 'sim_data', 'sim_data_aug']
 
     max_len = 6000
-    interval = [0.0, 1.0]
+    interval = [0.4, 1.0]
 
     feat_type = 'stft'
     y_axis_type = 'linear'

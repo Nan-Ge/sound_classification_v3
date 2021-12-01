@@ -10,7 +10,7 @@ import config
 
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
 root_dir = '../Knock_dataset/feature_data/stft_deno_aug'
-dom = ['exp_data', 'sim_data']
+dom = ['exp_data', 'sim_data_aug']
 cuda = torch.cuda.is_available()
 torch.cuda.empty_cache()
 
@@ -44,8 +44,6 @@ val_loader = (src_val_loader, tgt_val_loader)
 
 # (2) 网络、损失函数、优化器
 from network import xvec_dann_orig
-from model_dann_1_xvec.losses import OnlineTripletLoss
-from model_dann_1_xvec.loss_utils import SemihardNegativeTripletSelector
 
 # 网络模型
 freq_size = pair_wise_dataset.data_shape[1]

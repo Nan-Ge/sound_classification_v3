@@ -59,13 +59,13 @@ class xvec_dann_orig(nn.Module):
                 time_feat, _, _ = self.time_feat_extractor(input_data.transpose(1, 2))
                 feat_output = torch.cat((freq_feat, time_feat), dim=1)
             else:
-                feat_output = self.freq_feat_extractor(input_data)
+                feat_output, _, _ = self.freq_feat_extractor(input_data)
         elif self.version == 2:
             # Note: x must be (batch_size, feat_dim, chunk_len)
             feat_output = self.freq_feat_extractor(input_data, eps)
 
         # L2正则化
-        # feat_output = self.l2_norm(feat_output)
+        feat_output = self.l2_norm(feat_output)
 
         # Label Predictor 前向传播
         lp_output = self.lbl_pred(feat_output)
