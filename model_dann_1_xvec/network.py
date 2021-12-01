@@ -55,17 +55,17 @@ class time_x_vec_DANN(nn.Module):
         return class_output, domain_output, freq_x_vec
 
 
-class time_freq_x_vec_DANN(nn.Module):
-    def __init__(self, input_dim, tdnn_embedding_size, triplet_output_size, pair_output_size):
-        super(time_freq_x_vec_DANN, self).__init__()
+class xvec_dann_triplet(nn.Module):
+    def __init__(self, input_dim, embedDim, lpDim, dcDim):
+        super(xvec_dann_triplet, self).__init__()
         # (1) Feature Extractor
-        self.freq_feature_extractor = X_vector(input_dim=input_dim[0], tdnn_embedding_size=tdnn_embedding_size)
-        self.time_feature_extractor = X_vector(input_dim=input_dim[1], tdnn_embedding_size=tdnn_embedding_size)
+        self.freq_feature_extractor = X_vector(input_dim=input_dim[0], tdnn_embedding_size=embedDim)
+        self.time_feature_extractor = X_vector(input_dim=input_dim[1], tdnn_embedding_size=embedDim)
 
         # (2) Label predictor
         # Layer 1
         self.label_predictor = nn.Sequential()
-        self.label_predictor.add_module('lp_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.label_predictor.add_module('lp_fc1', nn.Linear(embedDim * 2, lpDim))
         self.label_predictor.add_module('lp_l2norm', L2_norm())
         # self.label_predictor.add_module('lp_bn1', nn.BatchNorm1d(512))
 
@@ -84,7 +84,7 @@ class time_freq_x_vec_DANN(nn.Module):
         # (3) Domain classifier
         # Layer 1
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('dc_fc1', nn.Linear(tdnn_embedding_size * 2, triplet_output_size))
+        self.domain_classifier.add_module('dc_fc1', nn.Linear(embedDim * 2, lpDim))
         self.label_predictor.add_module('dc_l2norm', L2_norm())
         # self.domain_classifier.add_module('dc_bn1', nn.BatchNorm1d(512))
         # self.domain_classifier.add_module('dc_prelu1', nn.PReLU())

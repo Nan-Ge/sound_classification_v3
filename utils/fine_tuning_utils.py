@@ -20,11 +20,12 @@ def query_generation(support_set_label, test_loader, n_samples_per_class=1):
 
 
 def model_parameter_printing(model):
-    ### 输出模型所有可训练参数
+    # 输出模型所有可训练参数
     print('\nThe fine-tuned parameters include:')
     for name, param in model.named_parameters():
         if param.requires_grad:
             print(name)
-    ### 输出模型所有参数值
+
+    #输出模型所有参数值
     # for i in fine_tuned_model.named_parameters():
     #     print(i)

@@ -259,7 +259,6 @@ class KnockDataset_val(Dataset):
 
         self.total_label_set = set(self.y_total)
         self.val_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
-        self.val_label_set = list(self.total_label_set)
         self.val_label_set.sort()
 
         self.val_data = np.empty((0, self.x_total.shape[1], self.x_total.shape[2]), dtype=np.float32)
@@ -279,6 +278,8 @@ class KnockDataset_val(Dataset):
     def __getitem__(self, index):
         img = self.val_data[index: index + 1]
         label = int(self.val_label[index: index + 1])
+        label = self.val_label_set.index(label)
+
         return img, label
 
     def __len__(self):
@@ -289,8 +290,9 @@ class KnockDataset_test(Dataset):
     '''
     测试集的样本是support set中所有类别在源域中的样本
     '''
-    def __init__(self, root_dir, domain, support_label_set):
-        self.x_data_total, self.y_data_total = load_data(root_dir, domain, train_flag=0)  # 读取磁盘数据
+    def __init__(self, root_data, support_label_set):
+        self.x_data_total = root_data[0]
+        self.y_data_total = root_data[1]
         self.test_data = np.empty((0, self.x_data_total.shape[1], self.x_data_total.shape[2]), dtype=np.float32)
         self.test_labels = np.empty((0,), np.int32)
         self.n_classes = len(support_label_set)
@@ -301,6 +303,7 @@ class KnockDataset_test(Dataset):
         else:
             support_label_set = list(support_label_set)
             support_label_set.sort()
+            self.support_label_set = support_label_set
 
             for i in iter(support_label_set):
                 num_of_data = self.y_data_total[self.y_data_total == i].shape[0]
@@ -318,6 +321,8 @@ class KnockDataset_test(Dataset):
     def __getitem__(self, index):
         wav = self.test_data[index: index + 1]
         label = int(self.test_labels[index: index + 1])
+        label = self.support_label_set.index(label)
+
         return wav, label
 
     def __len__(self):
@@ -334,7 +339,6 @@ class KnockDataset_pair(Dataset):
         # 剔除支撑集label
         self.total_label_set = set(self.src_y_total)
         self.pair_label_set = list(self.total_label_set - support_label_set)
-        self.pair_label_set = list(self.total_label_set)
         self.pair_label_set.sort()
 
         # 获取label数量
@@ -365,8 +369,12 @@ class KnockDataset_pair(Dataset):
     def __getitem__(self, item):
         exp_data = self.exp_data[item: item + 1]
         exp_label = self.exp_label[item: item + 1]
+        exp_label = self.pair_label_set.index(exp_label)
+
         sim_data = self.sim_data[item: item + 1]
         sim_label = self.sim_label[item: item + 1]
+        sim_label = self.pair_label_set.index(sim_label)
+
         return (exp_data, exp_label), (sim_data, sim_label)
 
     def __len__(self):

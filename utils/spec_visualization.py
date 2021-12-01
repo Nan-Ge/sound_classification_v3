@@ -103,7 +103,7 @@ if __name__ == '__main__':
         ax[1, 1].get_xaxis().set_visible(False)
         ax[1, 1].label_outer()
 
-        fig.colorbar(img, ax=ax, format="%+2.f dB")
+        fig.colorbar(img, ax=ax, format="%+2.f")
         fig.suptitle(sound_npy_file)
         plt.savefig(os.path.join('../results/output_spec', sound_npy_file.split('.')[0]) + '.png')
         plt.cla()
