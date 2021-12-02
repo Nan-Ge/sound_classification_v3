@@ -55,8 +55,8 @@ class xvec_dann_orig(nn.Module):
         if self.version == 1:
             input_data = input_data.permute(0, 2, 1)
             if self.freq_time:
-                freq_feat, _, _ = self.freq_feat_extractor(input_data)
-                time_feat, _, _ = self.time_feat_extractor(input_data.transpose(1, 2))
+                _, freq_feat, _ = self.freq_feat_extractor(input_data)
+                _, time_feat, _ = self.time_feat_extractor(input_data.transpose(1, 2))
                 feat_output = torch.cat((freq_feat, time_feat), dim=1)
             else:
                 feat_output, _, _ = self.freq_feat_extractor(input_data)

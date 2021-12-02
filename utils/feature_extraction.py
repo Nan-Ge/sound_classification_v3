@@ -38,11 +38,11 @@ def feat_calc(audio_data):
 
 if __name__ == '__main__':
     root_dir = '../Knock_dataset'
-    domains = ['exp_data', 'sim_data_aug']
+    domains = ['exp_data', 'sim_data', 'sim_data_aug']
     raw_data_dir = 'raw_data'
-    feat_data_dir = 'feature_data/stft_deno_aug'
+    feat_data_dir = 'feature_data/fbank'
 
-    for i in range(0, 2):
+    for i in range(len(domains)):
         shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]), ignore_errors=True)
         os.makedirs(os.path.join(root_dir, feat_data_dir, domains[i]))
 
@@ -50,7 +50,7 @@ if __name__ == '__main__':
     kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40)
     interval = [0.4, 1.0]
 
-    feat_type = 'stft'
+    feat_type = 'fbank'
     deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
 
     for domain_ in domains:

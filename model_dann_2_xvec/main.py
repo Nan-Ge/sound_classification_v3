@@ -9,8 +9,8 @@ from utils.confusion_matrix_plot import plot_confusion_matrix
 import config
 
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
-root_dir = '../Knock_dataset/feature_data/stft_deno_aug'
-dom = ['exp_data', 'sim_data_aug']
+root_dir = '../Knock_dataset/feature_data/stft'
+dom = ['exp_data', 'sim_data']
 cuda = torch.cuda.is_available()
 torch.cuda.empty_cache()
 
@@ -62,8 +62,7 @@ if cuda:
     model.cuda()
 
 # 损失函数
-dc_loss = torch.nn.NLLLoss()
-loss_fn = dc_loss
+loss_fn = torch.nn.NLLLoss()
 
 # 优化器
 optimizer = optim.Adam(model.parameters(), lr=config.OFF_INITIAL_LR, weight_decay=config.OFF_WEIGHT_DECAY)
