@@ -11,7 +11,13 @@ from utils.audio_data_load import arg_list, load_npy
 
 def feat_calc(audio_data):
     if feat_type == 'stft':
-        linear = librosa.stft(audio_data, n_fft=kargs.n_fft, win_length=kargs.win_len, hop_length=kargs.hop_len)
+        linear = librosa.stft(
+            audio_data,
+            n_fft=kargs.n_fft,
+            win_length=kargs.win_len,
+            hop_length=kargs.hop_len,
+            window=kargs.window
+        )
         mag, _ = librosa.magphase(linear)
 
         mu = np.mean(mag, 0, keepdims=True)
@@ -27,7 +33,9 @@ def feat_calc(audio_data):
             n_fft=kargs.n_fft,
             win_length=kargs.win_len,
             hop_length=kargs.hop_len,
-            n_mels=kargs.n_mels)
+            n_mels=kargs.n_mels,
+            window=kargs.window
+        )
 
         mu = np.mean(mel_spec, 0, keepdims=True)
         std = np.std(mel_spec, 0, keepdims=True)
@@ -40,17 +48,17 @@ if __name__ == '__main__':
     root_dir = '../Knock_dataset'
     domains = ['exp_data', 'sim_data', 'sim_data_aug']
     raw_data_dir = 'raw_data'
-    feat_data_dir = 'feature_data/fbank'
+    feat_data_dir = 'feature_data/stft_whole'
 
     for i in range(len(domains)):
         shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]), ignore_errors=True)
         os.makedirs(os.path.join(root_dir, feat_data_dir, domains[i]))
 
     max_len = 6000
-    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40)
-    interval = [0.4, 1.0]
+    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40, window='hann')
+    interval = [0.0, 1.0]
 
-    feat_type = 'fbank'
+    feat_type = 'stft'
     deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
 
     for domain_ in domains:

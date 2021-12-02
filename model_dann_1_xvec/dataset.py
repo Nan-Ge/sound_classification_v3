@@ -192,8 +192,6 @@ def load_data(dataset_dir, dom, train_flag):
         src_x_total, src_y_total = shuffle(src_x_total, src_y_total, random_state=shuffle_random_state)  # 打乱数据顺序
         tgt_x_total, tgt_y_total = shuffle(tgt_x_total, tgt_y_total, random_state=shuffle_random_state)
 
-
-
         return (src_x_total, src_y_total), (tgt_x_total, tgt_y_total)
 
     elif train_flag == 0:

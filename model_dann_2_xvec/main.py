@@ -9,7 +9,7 @@ from utils.confusion_matrix_plot import plot_confusion_matrix
 import config
 
 # /////////////////////////////////////// Baseline Training & Testing  /////////////////////////////////////////////////
-root_dir = '../Knock_dataset/feature_data/stft'
+root_dir = '../Knock_dataset/feature_data/stft_whole'
 dom = ['exp_data', 'sim_data']
 cuda = torch.cuda.is_available()
 torch.cuda.empty_cache()
@@ -99,13 +99,13 @@ qry_loader = torch.utils.data.DataLoader(qry_dataset, batch_size=len(qry_dataset
 spt_dataset = KnockDataset_test(
     root_data=(tgt_x_total, tgt_y_total),
     support_label_set=config.SUPPORT_SET_LABEL)
-spt_loader = torch.utils.data.DataLoader(spt_dataset, batch_size=config.FINE_TUNE_BATCH)
+spt_loader = torch.utils.data.DataLoader(spt_dataset, batch_size=config.FINE_TUNE_BATCH, shuffle=True)
 
 # (2) 加载Baseline Model
 model_path = '../results/output_model'
 model_list = list(os.listdir(model_path))
 model_list.sort(reverse=True)
-model_name = model_list[0]
+model_name = model_list[1]
 baseline_model = torch.load(os.path.join(model_path, model_name))
 
 
@@ -139,23 +139,24 @@ print('\nBaseline model validation accuracy: %0.2f %%' % (accu * 100))
 #     cuda=cuda)
 
 # (4) 定义Fine-tuning网络及可训练参数
-fine_tuned_model = ft_xvec_dann_orig(
+ft_model = ft_xvec_dann_orig(
     baseModel=baseline_model,
     n_class=len(config.SUPPORT_SET_LABEL),
     version=config.XVEC_VERSION)
 
-fixed_module = ['feature_extractor', 'domain_classifier']
-# fixed_module = ['domain_classifier']
-for name, param in fine_tuned_model.named_parameters():
-    net_module = name.split('.')[0]
-    if net_module in fixed_module:
-        param.requires_grad = False
 
-model_parameter_printing(fine_tuned_model)  # 打印网络参数
+for name, param in ft_model.named_parameters():
+    net_module = name.split('.')[0]
+    if net_module in config.FIXED_MODULE:
+        param.requires_grad = False
+    # if name == 'feature_extractor.fc1.weight' or name == 'feature_extractor.fc1.bias':
+    #     param.requires_grad = True
+
+model_parameter_printing(ft_model)  # 打印网络参数
 
 # (5) Re-initialize Loss_func and Optimizer
 loss_fn = torch.nn.NLLLoss()
-optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=config.ON_INITIAL_LR, weight_decay=config.ON_WEIGHT_DECAY)
+optimizer = optim.Adam(filter(lambda p: p.requires_grad, ft_model.parameters()), lr=config.ON_INITIAL_LR, weight_decay=config.ON_WEIGHT_DECAY)
 scheduler = lr_scheduler.StepLR(optimizer, config.ON_LR_ADJUST_STEP, gamma=config.ON_LR_ADJUST_RATIO, last_epoch=-1)
 
 # (6) Fine-tuning & Testing
@@ -164,7 +165,7 @@ if config.FINE_TUNE_STAGE:
         train_loader=spt_loader,
         test_loader=qry_loader,
         support_label_set=config.SUPPORT_SET_LABEL,
-        model=fine_tuned_model,
+        model=ft_model,
         loss_fn=loss_fn,
         optimizer=optimizer,
         scheduler=scheduler,

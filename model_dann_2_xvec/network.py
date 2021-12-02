@@ -26,11 +26,11 @@ class xvec_dann_orig(nn.Module):
         # (2) Domain Classifier
         self.dmn_clr = nn.Sequential()
         # Layer 1
-        self.dmn_clr.add_module('dc_fc1', nn.Linear(embedDim * 1, embedDim * 2))
-        self.dmn_clr.add_module('dc_bn1', nn.BatchNorm1d(embedDim * 2))
+        self.dmn_clr.add_module('dc_fc1', nn.Linear(embedDim * 1, embedDim * 4))
+        self.dmn_clr.add_module('dc_bn1', nn.BatchNorm1d(embedDim * 4))
         self.dmn_clr.add_module('dc_prelu1', nn.PReLU())
         # Layer 2
-        self.dmn_clr.add_module('dc_fc2', nn.Linear(embedDim * 2, embedDim))
+        self.dmn_clr.add_module('dc_fc2', nn.Linear(embedDim * 4, embedDim))
         self.dmn_clr.add_module('dc_bn2', nn.BatchNorm1d(embedDim))
         self.dmn_clr.add_module('dc_prelu2', nn.PReLU())
         # Layer 3
@@ -40,11 +40,11 @@ class xvec_dann_orig(nn.Module):
         # (3) Label Predictor
         self.lbl_pred = nn.Sequential()
         # Layer 1
-        self.lbl_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * 2))
-        self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * 2))
+        self.lbl_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * 4))
+        self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * 4))
         self.lbl_pred.add_module('lp_prelu1', nn.PReLU())
         # Layer 2
-        self.lbl_pred.add_module('lp_fc2', nn.Linear(embedDim * 2, embedDim))
+        self.lbl_pred.add_module('lp_fc2', nn.Linear(embedDim * 4, embedDim))
         self.lbl_pred.add_module('lp_bn2', nn.BatchNorm1d(embedDim))
         self.lbl_pred.add_module('lp_prelu2', nn.PReLU())
         # Layer 3
@@ -53,6 +53,7 @@ class xvec_dann_orig(nn.Module):
 
     def forward(self, input_data, alpha, eps):
         if self.version == 1:
+            # Note: input size(batch, seq_len, input_features)
             input_data = input_data.permute(0, 2, 1)
             if self.freq_time:
                 _, freq_feat, _ = self.freq_feat_extractor(input_data)
@@ -82,8 +83,13 @@ class ft_xvec_dann_orig(nn.Module):
         super(ft_xvec_dann_orig, self).__init__()
         self.version = version
         # (1) 提取预训练的Feature extractor
-        self.feature_extractor = list(baseModel.children())[0]
-        self.embedDim = self.feature_extractor.segment7.out_features
+        if version == 1:
+            self.feature_extractor = list(baseModel.children())[0]
+            self.embedDim = self.feature_extractor.segment7.out_features
+
+        elif version == 2:
+            self.feature_extractor = list(baseModel.children())[0]
+            self.embedDim = self.feature_extractor.fc1.out_features
 
         # (2) 新增Label predictor
         self.lp_new = nn.Sequential()
@@ -105,10 +111,10 @@ class ft_xvec_dann_orig(nn.Module):
         (2) __init__中仍然保存了Domain classifier和Feature extractor的参数，这是为了以后再次更新模型
         '''
         if self.version == 1:
-            feat_output, _, _ = self.feature_extractor(input_data)
+            _, feat_output, _ = self.feature_extractor(input_data)
             class_output = self.lp_new(feat_output)
         elif self.version == 2:
-            feat_output = self.freq_feat_extractor(input_data, 0)
+            feat_output = self.feature_extractor(input_data, 0)
             class_output = self.lp_new(feat_output)
 
         return class_output

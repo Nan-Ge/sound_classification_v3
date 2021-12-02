@@ -17,18 +17,20 @@ def netFT_fit(train_loader, test_loader, support_label_set, model, loss_fn, opti
     for epoch in range(n_epochs):
         scheduler.step()
         # Train stage
-        netFT_train_epoch(train_loader=train_loader, model=model,
-                          loss_fn=loss_fn,
-                          optimizer=optimizer,
-                          epoch=epoch,
-                          cuda=cuda,
-                          support_label_set=support_label_set)
+        netFT_train_epoch(
+            train_loader=train_loader, model=model,
+            loss_fn=loss_fn,
+            optimizer=optimizer,
+            epoch=epoch,
+            cuda=cuda,
+            support_label_set=support_label_set)
         # Test stage
-        test_accu = netFT_test_epoch(test_loader=test_loader,
-                                     model=model,
-                                     cuda=cuda,
-                                     support_label_set=support_label_set)
-        print(', Test accuracy: %f for %d / %d' % (test_accu, epoch + 1, n_epochs))
+        test_accu, _ = netFT_test_epoch(
+            test_loader=test_loader,
+            model=model,
+            cuda=cuda,
+            support_label_set=support_label_set)
+        print(', Test accuracy: %.2f %% for %d / %d' % (test_accu * 100, epoch + 1, n_epochs))
 
 
 def netFT_train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, support_label_set):
@@ -36,22 +38,22 @@ def netFT_train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, supp
     len_dataloader = len(train_loader)
 
     for index, item in enumerate(train_loader):
-        sound, label = item
-        sound = sound.squeeze()  # 删除channel dimension
+        spt_x, spt_y = item
+        spt_x = spt_x.squeeze(1)  # 删除channel dimension
 
-        # 调整label的值，以进行NLLLoss的计算
-        for i, label_ in enumerate(label):
-            label[i] = torch.tensor(support_label_set.index(label[i]))
+        # # 调整label的值，以进行NLLLoss的计算
+        # for i, label_ in enumerate(label):
+        #     label[i] = torch.tensor(support_label_set.index(label[i]))
 
         if cuda:
             model.cuda()
-            sound = sound.cuda()
-            label = label.cuda()
+            spt_x = spt_x.cuda()
+            spt_y = spt_y.cuda()
 
         model.zero_grad()
-        pred, _ = model(sound)
+        pred = model(spt_x)
         # _, _, pred = model(sound)
-        err_label = loss_fn(pred, label)
+        err_label = loss_fn(pred, spt_y)
         err_label.backward()
         optimizer.step()
 
@@ -78,26 +80,26 @@ def netFT_test_epoch(test_loader, model, cuda, support_label_set):
         model.eval()
 
         test_iter = iter(test_loader)
-        test_sound, test_label = test_iter.next()
+        tgt_x, tgt_y = test_iter.next()
 
         # 调整label的值，以进行NLLLoss的计算
-        for i, label_ in enumerate(test_label):
-            test_label[i] = torch.tensor(support_label_set.index(test_label[i]))
+        # for i, label_ in enumerate(test_label):
+        #     test_label[i] = torch.tensor(support_label_set.index(test_label[i]))
 
-        test_sound = test_sound.squeeze()  # 删除channel dimension
-        test_label = np.array(test_label.cpu())
+        tgt_x = tgt_x.squeeze()  # 删除channel dimension
+        tgt_y = np.array(tgt_y.cpu())
 
         if cuda:
-            test_sound = test_sound.cuda()
+            tgt_x = tgt_x.cuda()
 
-        pred, _ = model(test_sound)
-        # _, _, pred = model(test_sound)
+        pred = model(tgt_x)
+
         pred_label = np.argmax(np.array(pred.cpu()), axis=1)
 
-        n_correct += sum(test_label == pred_label)
-        n_total += len(test_label)
+        n_correct += sum(tgt_y == pred_label)
+        n_total += len(tgt_y)
         accu = n_correct / n_total
 
-        confusion_mat = confusion_matrix(test_label, pred_label)
+        confusion_mat = confusion_matrix(tgt_y, pred_label)
 
     return accu, confusion_mat
