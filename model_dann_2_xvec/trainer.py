@@ -14,7 +14,6 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
     print('\n--------- Start transfer baseline model training at:' + exp_time + '---------')
 
     for epoch in range(0, n_epochs):
-        scheduler.step()
         # Train stage
         src_err_lp, tgt_err_lp, err_dc = train_epoch(
             train_loader=train_loader,
@@ -24,6 +23,7 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
             cuda=cuda,
             epoch=epoch,
             n_epochs=n_epochs)
+        scheduler.step()
 
         # Validation stage [offline_val_loader = (src_val_loader, tgt_val_loader)]
         support_set = (val_loader[1].dataset.val_data, val_loader[1].dataset.val_label)
@@ -93,9 +93,6 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
 
         # (2) Softmax Loss
         dc_err = loss_fn[1](dc_output, src_tgt_label)
-
-
-
 
         # (4) Console output
         sys.stdout.write('\r epoch: %d, [iter: %d / all %d], src_err_lp: %f, tgt_err_lp: %f, err_dc: %f' %

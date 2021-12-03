@@ -3,15 +3,14 @@ import torch.optim as optim
 import torch.utils.data
 from model_dann_1_xvec.dataset import *
 from model_dann_1_xvec.online_trainer import *
-from model_dann_1_xvec.network import X_vector
+from model_dann_test_xvec.network import X_vector
 
 from get_train_test import *
 from config_2 import *
 from baseline_trainer import *
 
 
-def train_base_model(train_dataset, test_dataset):
-    cuda = torch.cuda.is_available()
+def train_base_model(train_dataset, test_dataset, cuda):
     n_classes = train_dataset.n_classes
 
     x_vec_train_batch_size = 50
@@ -47,13 +46,25 @@ def train_base_model(train_dataset, test_dataset):
     )
 
 
+def train_transfer_model():
+    n_classes = train_dataset.n_classes
+
+    x_vec_train_batch_size = 50
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=int(x_vec_train_batch_size), shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset))
+
+
 if __name__ == '__main__':
     # (1) 数据集
     name = 'exp'
     target_path = 'fbank_dnoised_data'
     obj_list = ObjList(name)
     dataset = load_feature_data(obj_list, target_path)
-    train_dataset, test_dataset = get_train_test_dataset_3(dataset, 20)
+    print('Dataset 7:')
+    train_dataset, test_dataset = get_train_test_dataset_6(dataset, 20)
     print('Loading data finished.')
 
-    train_base_model(train_dataset, test_dataset)
+    cuda = torch.cuda.is_available()
+    print('cuda device count: ', torch.cuda.device_count())
+    print('current device name: ', torch.cuda.get_device_name(torch.cuda.current_device()))
+    train_base_model(train_dataset, test_dataset, cuda)

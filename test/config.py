@@ -23,7 +23,8 @@ class GlobalVar:
         self.GENMOMENTS = self.MODAL_SOUND + '/gen_moments'
         self.MATLAB = self.ROOT_DIR + '/matlab'
         self.FILEGENERATORS = self.ROOT_DIR + '/file_generator'
-        self.DATASET = '/mnt/sde/wyz/data/knock_data'
+        # self.DATASET = '/mnt/sde/wyz/data/knock_data'
+        self.DATASET = 'E:\Program\GitHub\sound_classification_v3\Knock_dataset'
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(GlobalVar, "_instance"):
@@ -79,7 +80,7 @@ class ObjList:
         material_config_path = os.path.join(global_var.DATASET, 'config', material_file_config_name)
 
         self.obj_file_name_list = []
-        with open(obj_list_path) as file:
+        with open(obj_list_path, encoding='utf-8') as file:
             for line in file:
                 obj_name = line.strip()
                 if obj_name[0] == '#':
@@ -87,9 +88,9 @@ class ObjList:
                 self.obj_file_name_list.append(obj_name)
 
         model_config = configparser.ConfigParser()
-        model_config.read(model_config_path)
+        model_config.read(model_config_path, encoding='utf-8')
         material_config = configparser.ConfigParser()
-        material_config.read(material_config_path)
+        material_config.read(material_config_path, encoding='utf-8')
 
         self.obj_list = []
         for obj_name in self.obj_file_name_list:

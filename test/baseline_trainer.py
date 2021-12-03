@@ -77,7 +77,6 @@ def non_transfer_base_line_fit(train_loader, test_loader, model, loss_fn, optimi
     exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
     print('\n--------- Start transfer baseline model training at:' + exp_time + '---------')
     for epoch in range(0, n_epochs):
-        scheduler.step()
         # Train Stage
         err_softmax = train_epoch_x_vec(train_loader=train_loader,
                                         model=model,
@@ -85,6 +84,7 @@ def non_transfer_base_line_fit(train_loader, test_loader, model, loss_fn, optimi
                                         optimizer=optimizer,
                                         cuda=cuda,
                                         epoch=epoch)
+        scheduler.step()
 
         # Validation Stage
         accu, cm = test_epoch_x_vec(

@@ -3,8 +3,9 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/Knock_DANN/dataset" />
+      <excludeFolder url="file://$MODULE_DIR$/Knock_dataset" />
     </content>
-    <orderEntry type="jdk" jdkName="Remote Python 3.8.8 (sftp://eecyc@202.120.37.116:4793/opt/anaconda3/bin/python)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.7" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">
