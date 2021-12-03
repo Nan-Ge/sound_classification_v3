@@ -3,13 +3,18 @@ import numpy as np
 
 
 class arg_list:
-    def __init__(self, fs, n_fft, win_len, hop_len, n_mels, window='None'):
+    def __init__(self, fs, n_fft, win_len, hop_len, n_mels, max_len, interval, feat_type, deno_method,  window='hann'):
         self.fs = fs
         self.n_fft = n_fft
         self.win_len = win_len
         self.hop_len = hop_len
         self.n_mels = n_mels
         self.window = window
+
+        self.max_len = max_len
+        self.interval = interval
+        self.feat_type = feat_type
+        self.deno_method = deno_method
 
 
 def am_normalization(audio_data):

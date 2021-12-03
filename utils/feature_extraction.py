@@ -9,8 +9,8 @@ from audio_preprocessing.wav_denoising import denoising
 from utils.audio_data_load import arg_list, load_npy
 
 
-def feat_calc(audio_data):
-    if feat_type == 'stft':
+def feat_calc(audio_data, kargs):
+    if kargs.feat_type == 'stft':
         linear = librosa.stft(
             audio_data,
             n_fft=kargs.n_fft,
@@ -26,7 +26,7 @@ def feat_calc(audio_data):
 
         return normalized_spec
 
-    elif feat_type == 'fbank':
+    elif kargs.feat_type == 'fbank':
         mel_spec = librosa.feature.melspectrogram(
             audio_data,
             kargs.fs,
@@ -44,24 +44,23 @@ def feat_calc(audio_data):
         return normalized_mel_spec
 
 
-if __name__ == '__main__':
+def feat_extraction(feat_data_dir, kargs):
     root_dir = '../Knock_dataset'
-    domains = ['exp_data', 'sim_data', 'sim_data_aug']
     raw_data_dir = 'raw_data'
-    feat_data_dir = 'feature_data/stft_whole'
+    doms = ['exp_data', 'sim_data', 'sim_data_aug']
 
-    for i in range(len(domains)):
-        shutil.rmtree(os.path.join(root_dir, feat_data_dir, domains[i]), ignore_errors=True)
-        os.makedirs(os.path.join(root_dir, feat_data_dir, domains[i]))
+    for i in range(len(doms)):
+        if os.path.exists(os.path.join(root_dir, feat_data_dir, doms[i])):
+            return 0
+        shutil.rmtree(os.path.join(root_dir, feat_data_dir, doms[i]), ignore_errors=True)
+        os.makedirs(os.path.join(root_dir, feat_data_dir, doms[i]))
 
-    max_len = 6000
-    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40, window='hann')
-    interval = [0.0, 1.0]
+    max_len = kargs.max_len
+    interval = [kargs.interval, 1.0]
+    feat_type = kargs.feat_type
+    deno_method = kargs.deno_method  # (skimage-Visu, skimage-Bayes, pywt)
 
-    feat_type = 'stft'
-    deno_method = 'skimage-Bayes'  # (skimage-Visu, skimage-Bayes, pywt)
-
-    for domain_ in domains:
+    for domain_ in doms:
         path = os.path.join(root_dir, raw_data_dir, domain_)
         files = os.listdir(path)
         for i, file in enumerate(files):
@@ -76,10 +75,17 @@ if __name__ == '__main__':
                     if domain_ == 'exp_data':
                         data = denoising(data, method=deno_method)
 
-                    feat = feat_calc(audio_data=data)
+                    feat = feat_calc(audio_data=data, kargs=kargs)
                     feat_data.append(feat)
 
                 feat_data_npy = np.array(feat_data)
                 save_path = os.path.join(root_dir, feat_data_dir, domain_, file)
                 np.save(save_path, feat_data_npy)
 
+
+if __name__ == '__main__':
+    kargs = arg_list(fs=48000, n_fft=256, win_len=256, hop_len=64, n_mels=40, window='hann')
+    feat_extraction(
+        feat_data_dir='feature_data/stft_whole',
+        kargs=kargs
+    )

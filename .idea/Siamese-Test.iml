@@ -6,7 +6,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Knock_dataset" />
       <excludeFolder url="file://$MODULE_DIR$/results" />
     </content>
-    <orderEntry type="jdk" jdkName="Python 3.7 (pytorchforknock)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Remote Python 3.8.8 (sftp://eecyc@10.18.133.44:4793/opt/anaconda3/bin/python)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">

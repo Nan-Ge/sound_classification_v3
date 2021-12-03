@@ -2,7 +2,7 @@
   "FEATURE_TYPE": {"_type":"choice", "_value": ["fbank", "stft"]},
   "SRC_DATASET": {"_type":"choice", "_value": ["sim_data", "sim_data_aug"]},
   "INTERVAL": {"_type":"choice", "_value": [0.2, 0.3, 0.4, 0.5]},
-  "N_FFT": {"_type":"choice", "_value": [64, 128, 256, 512]},
+  "N_FFT": {"_type":"choice", "_value": [128, 256, 512]},
   "DENO_METHOD": {"_type":"choice", "_value": ["skimage-Visu", "skimage-Bayes"]},
 
   "NUM_SAMPLES_PER_CLASS":{"_type":"choice","_value":[2, 3]},
@@ -14,10 +14,12 @@
   "FC2_OUT_DIM": {"_type":"choice", "_value": [2, 4, 8]},
   "P_DROP":{"_type":"choice","_value":[0.2, 0.3, 0.4, 0.5]},
 
-  "OFF_LR":{"_type":"choice","_value":[1e-2, 1e-3, 1e-4]},
-  "OFF_WEIGHT_DECAY":{"_type":"choice","_value":[1e-2, 1e-3]},
+  "OFF_LR":{"_type":"choice","_value":[0.01, 0.001, 0.0001]},
+  "OFF_WEIGHT_DECAY":{"_type":"choice","_value":[0.01, 0.001]},
 
-  "SRC_LOSS_WGT": {"_type":"uniform","_value":[0.5, 2]},
-  "TGT_LOSS_WGT": {"_type":"uniform","_value":[0.5, 2]},
-  "DC_LOSS_WGT": {"_type":"uniform","_value":[0.5, 2]}
+  "SRC_LOSS_WGT": {"_type":"choice","_value":[0.5, 1.0, 1.5, 2.0]},
+  "TGT_LOSS_WGT": {"_type":"choice","_value":[0.5, 1.0, 1.5, 2.0]},
+  "DC_LOSS_WGT": {"_type":"choice","_value":[0.5, 1.0, 1.5, 2.0]}
+
 }
+

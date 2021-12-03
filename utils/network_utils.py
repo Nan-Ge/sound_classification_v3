@@ -123,29 +123,34 @@ class X_vector(nn.Module):
 # ---------------------------------- Version 2 --------------------------------------------
 class xvecTDNN(nn.Module):
 
-    def __init__(self, inputDim, embedDim, p_dropout):
+    def __init__(self, inputDim, args):
+        p_dropout = args['P_DROP']
+        embedDim = args['EMBED_SIZE']
+        tdnnDim = args['TDNN_OUT_CHANNEL']
+        tdnnFinalDim = args['TDNN_LAST_OUT_CHANNEL']
+
         super(xvecTDNN, self).__init__()
-        self.tdnn1 = nn.Conv1d(in_channels=inputDim, out_channels=512, kernel_size=5, dilation=1)
-        self.bn_tdnn1 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
+        self.tdnn1 = nn.Conv1d(in_channels=inputDim, out_channels=tdnnDim, kernel_size=5, dilation=1)
+        self.bn_tdnn1 = nn.BatchNorm1d(tdnnDim, momentum=0.1, affine=False)
         self.dropout_tdnn1 = nn.Dropout(p=p_dropout)
 
-        self.tdnn2 = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=5, dilation=2)
-        self.bn_tdnn2 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
+        self.tdnn2 = nn.Conv1d(in_channels=tdnnDim, out_channels=tdnnDim, kernel_size=5, dilation=2)
+        self.bn_tdnn2 = nn.BatchNorm1d(tdnnDim, momentum=0.1, affine=False)
         self.dropout_tdnn2 = nn.Dropout(p=p_dropout)
 
-        self.tdnn3 = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=7, dilation=3)
-        self.bn_tdnn3 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
+        self.tdnn3 = nn.Conv1d(in_channels=tdnnDim, out_channels=tdnnDim, kernel_size=7, dilation=3)
+        self.bn_tdnn3 = nn.BatchNorm1d(tdnnDim, momentum=0.1, affine=False)
         self.dropout_tdnn3 = nn.Dropout(p=p_dropout)
 
-        self.tdnn4 = nn.Conv1d(in_channels=512, out_channels=512, kernel_size=1, dilation=1)
-        self.bn_tdnn4 = nn.BatchNorm1d(512, momentum=0.1, affine=False)
+        self.tdnn4 = nn.Conv1d(in_channels=tdnnDim, out_channels=tdnnDim, kernel_size=1, dilation=1)
+        self.bn_tdnn4 = nn.BatchNorm1d(tdnnDim, momentum=0.1, affine=False)
         self.dropout_tdnn4 = nn.Dropout(p=p_dropout)
 
-        self.tdnn5 = nn.Conv1d(in_channels=512, out_channels=1500, kernel_size=1, dilation=1)
-        self.bn_tdnn5 = nn.BatchNorm1d(1500, momentum=0.1, affine=False)
+        self.tdnn5 = nn.Conv1d(in_channels=tdnnDim, out_channels=tdnnFinalDim, kernel_size=1, dilation=1)
+        self.bn_tdnn5 = nn.BatchNorm1d(tdnnFinalDim, momentum=0.1, affine=False)
         self.dropout_tdnn5 = nn.Dropout(p=p_dropout)
 
-        self.fc1 = nn.Linear(3000, embedDim)
+        self.fc1 = nn.Linear(tdnnFinalDim * 2, embedDim)
         self.bn_fc1 = nn.BatchNorm1d(embedDim, momentum=0.1, affine=False)
         self.dropout_fc1 = nn.Dropout(p=p_dropout)
 

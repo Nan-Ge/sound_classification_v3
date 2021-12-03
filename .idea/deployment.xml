@@ -1,37 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="GPU_sound_classification" compareModeInSync="SIZE">
+  <component name="PublishConfigData" autoUpload="Always" serverName="GPU" compareModeInSync="SIZE">
     <serverData>
-      <paths name="GPU_modal_sound">
+      <paths name="GPU">
         <serverdata>
           <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="GPU_sound_classification">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/program/sound_classification_v3" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
-            <excludedPath path="/Knock_dataset" />
-            <excludedPath path="/results" />
+            <excludedPath path="/program/sound_classification_v3/Knock_dataset" />
           </excludedPaths>
-        </serverdata>
-      </paths>
-      <paths name="baka@192.168.1.110:22">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="node15">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
         </serverdata>
       </paths>
     </serverData>

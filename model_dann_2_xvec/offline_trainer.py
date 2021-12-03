@@ -5,13 +5,14 @@ import numpy as np
 import sys
 import os
 import time
+import nni
 from sklearn.metrics import confusion_matrix
 
 import config
 from model_dann_1_xvec.trainer_utils import *
 
 
-def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda):
+def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, args):
     exp_time = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
     log_save_name_1 = 'model_dann_2_' + exp_time + '.txt'
 
@@ -31,21 +32,29 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
             optimizer=optimizer,
             cuda=cuda,
             epoch=epoch,
-            n_epochs=n_epochs)
+            n_epochs=n_epochs,
+            args=args
+        )
 
         # Validation stage [offline_val_loader = (src_val_loader, tgt_val_loader)]
-        accu_src, _ = val_epoch(
+        src_accu_n_correct, src_n_total, _ = val_epoch(
             val_loader=val_loader[0],
             model=model,
             cuda=cuda)
 
-        accu_tgt, _ = val_epoch(
+        tgt_accu_n_correct, tgt_n_total, _= val_epoch(
             val_loader=val_loader[1],
             model=model,
             cuda=cuda)
 
+        accu_src = src_accu_n_correct / src_n_total
+        accu_tgt = tgt_accu_n_correct / tgt_n_total
+        val_accu = (src_accu_n_correct + tgt_accu_n_correct) / (src_n_total + tgt_n_total)
+
+        nni.report_intermediate_result(val_accu)
+
         print(', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' %
-              (accu_src * 100, accu_tgt*100, epoch + 1, n_epochs))
+              (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs))
 
         with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
 
@@ -57,6 +66,8 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
                           (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs)
             f.write(test_output)
 
+    nni.report_final_result(val_accu)
+
     model_name = 'model_dann_2_' + exp_time + '_' + str(format(accu_src, '.2f')) + '-' + str(format(accu_tgt, '.2f')) + '.pkl'
     model_save_path = os.path.join('../results/output_model', model_name)
     torch.save(model, model_save_path)
@@ -65,7 +76,7 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
     return exp_time
 
 
-def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
+def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs, args):
     model.train()
 
     batch_iter = iter(train_loader)
@@ -111,9 +122,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs):
         dc_err = loss_fn(dc_output, dmn_label)
 
         # (3) Backward Propagation
-        err_total = config.LOSS_WEIGHTS[0] * src_lp_err + \
-                    config.LOSS_WEIGHTS[1] * tgt_lp_err + \
-                    config.LOSS_WEIGHTS[2] * dc_err
+        err_total = args['SRC_LOSS_WGT'] * src_lp_err + args['TGT_LOSS_WGT'] * tgt_lp_err + args['DC_LOSS_WGT'] * dc_err
 
         err_total.backward()
         optimizer.step()
@@ -157,4 +166,4 @@ def val_epoch(val_loader, model, cuda):
 
         confusion_mat = confusion_matrix(val_label, pred_label)
 
-    return accu, confusion_mat
+    return n_correct, n_total, confusion_mat

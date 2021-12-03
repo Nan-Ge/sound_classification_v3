@@ -7,10 +7,15 @@ from utils.network_utils import xvecTDNN, X_vector, L2_norm, ReverseLayerF
 
 
 class xvec_dann_orig(nn.Module):
-    def __init__(self, input_dim, embedDim, p_dropout, freq_time=False, n_cls=0, version=1):
+    def __init__(self, input_dim, args, freq_time=False, n_cls=0, version=1):
         super(xvec_dann_orig, self).__init__()
         self.freq_time = freq_time
         self.version = version
+
+        embedDim = args['EMBED_SIZE']
+        fc1_output_dim = args['FC1_OUT_DIM']
+        fc2_output_dim = args['FC2_OUT_DIM']
+
         # (1) Feature Extractor
         if version == 1:
             if self.freq_time:
@@ -19,36 +24,36 @@ class xvec_dann_orig(nn.Module):
             else:
                 self.freq_feat_extractor = X_vector(input_dim=input_dim[0], tdnn_embedding_size=embedDim)
         elif version == 2:
-            self.freq_feat_extractor = xvecTDNN(inputDim=input_dim[0], embedDim=embedDim, p_dropout=p_dropout)
+            self.freq_feat_extractor = xvecTDNN(inputDim=input_dim[0], args=args)
 
         self.l2_norm = L2_norm()
 
         # (2) Domain Classifier
         self.dmn_clr = nn.Sequential()
         # Layer 1
-        self.dmn_clr.add_module('dc_fc1', nn.Linear(embedDim * 1, embedDim * 4))
-        self.dmn_clr.add_module('dc_bn1', nn.BatchNorm1d(embedDim * 4))
+        self.dmn_clr.add_module('dc_fc1', nn.Linear(embedDim * 1, embedDim * fc1_output_dim))
+        self.dmn_clr.add_module('dc_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
         self.dmn_clr.add_module('dc_prelu1', nn.PReLU())
         # Layer 2
-        self.dmn_clr.add_module('dc_fc2', nn.Linear(embedDim * 4, embedDim))
-        self.dmn_clr.add_module('dc_bn2', nn.BatchNorm1d(embedDim))
+        self.dmn_clr.add_module('dc_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
+        self.dmn_clr.add_module('dc_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
         self.dmn_clr.add_module('dc_prelu2', nn.PReLU())
         # Layer 3
-        self.dmn_clr.add_module('dc_fc3', nn.Linear(embedDim, 2))
+        self.dmn_clr.add_module('dc_fc3', nn.Linear(embedDim * fc2_output_dim, 2))
         self.dmn_clr.add_module('dc_logsoftmax', nn.LogSoftmax(dim=1))
 
         # (3) Label Predictor
         self.lbl_pred = nn.Sequential()
         # Layer 1
-        self.lbl_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * 4))
-        self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * 4))
+        self.lbl_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * fc1_output_dim))
+        self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
         self.lbl_pred.add_module('lp_prelu1', nn.PReLU())
         # Layer 2
-        self.lbl_pred.add_module('lp_fc2', nn.Linear(embedDim * 4, embedDim))
-        self.lbl_pred.add_module('lp_bn2', nn.BatchNorm1d(embedDim))
+        self.lbl_pred.add_module('lp_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
+        self.lbl_pred.add_module('lp_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
         self.lbl_pred.add_module('lp_prelu2', nn.PReLU())
         # Layer 3
-        self.lbl_pred.add_module('dc_fc3', nn.Linear(embedDim, n_cls))
+        self.lbl_pred.add_module('dc_fc3', nn.Linear(embedDim * fc2_output_dim, n_cls))
         self.lbl_pred.add_module('dc_logsoftmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha, eps):
