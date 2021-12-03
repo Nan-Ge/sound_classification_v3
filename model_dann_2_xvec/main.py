@@ -68,6 +68,8 @@ def get_params():
 
 
 def main(args):
+    dataset_root_dir = os.path.join(os.path.pardir, os.path.pardir, os.path.pardir, 'data', 'Knock_dataset')
+
     # ///////////////////////////////////////////////// Feature Extraction /////////////////////////////////////////////
     feat_data_dir = os.path.join('feature_data', args['FEATURE_TYPE'] + '_' + str(args['INTERVAL']))
     kargs = arg_list(
@@ -83,10 +85,10 @@ def main(args):
         deno_method=args['DENO_METHOD']
     )
     logger.debug("Starting feature extracting!")
-    feat_extraction(feat_data_dir=feat_data_dir, kargs=kargs)
+    feat_extraction(root_data_dir=dataset_root_dir, feat_data_dir=feat_data_dir, kargs=kargs)
 
     # /////////////////////////////////////// Baseline Training & Testing  ////////////////////////////////////////////
-    feat_dir = os.path.join(os.path.pardir, 'Knock_dataset', feat_data_dir)
+    feat_dir = os.path.join(os.path.pardir, os.path.pardir, os.path.pardir, 'data', 'Knock_dataset', feat_data_dir)
     dom = ['exp_data', args['SRC_DATASET']]
     cuda = torch.cuda.is_available()
     print(cuda)

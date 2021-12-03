@@ -44,16 +44,15 @@ def feat_calc(audio_data, kargs):
         return normalized_mel_spec
 
 
-def feat_extraction(feat_data_dir, kargs):
-    root_dir = '../Knock_dataset'
+def feat_extraction(root_data_dir, feat_data_dir, kargs):
     raw_data_dir = 'raw_data'
     doms = ['exp_data', 'sim_data', 'sim_data_aug']
 
     for i in range(len(doms)):
-        if os.path.exists(os.path.join(root_dir, feat_data_dir, doms[i])):
+        if os.path.exists(os.path.join(root_data_dir, feat_data_dir, doms[i])):
             return 0
-        shutil.rmtree(os.path.join(root_dir, feat_data_dir, doms[i]), ignore_errors=True)
-        os.makedirs(os.path.join(root_dir, feat_data_dir, doms[i]))
+        shutil.rmtree(os.path.join(root_data_dir, feat_data_dir, doms[i]), ignore_errors=True)
+        os.makedirs(os.path.join(root_data_dir, feat_data_dir, doms[i]))
 
     max_len = kargs.max_len
     interval = [kargs.interval, 1.0]
@@ -61,7 +60,7 @@ def feat_extraction(feat_data_dir, kargs):
     deno_method = kargs.deno_method  # (skimage-Visu, skimage-Bayes, pywt)
 
     for domain_ in doms:
-        path = os.path.join(root_dir, raw_data_dir, domain_)
+        path = os.path.join(root_data_dir, raw_data_dir, domain_)
         files = os.listdir(path)
         for i, file in enumerate(files):
             feat_data = []
@@ -79,7 +78,7 @@ def feat_extraction(feat_data_dir, kargs):
                     feat_data.append(feat)
 
                 feat_data_npy = np.array(feat_data)
-                save_path = os.path.join(root_dir, feat_data_dir, domain_, file)
+                save_path = os.path.join(root_data_dir, feat_data_dir, domain_, file)
                 np.save(save_path, feat_data_npy)
 
 
