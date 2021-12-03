@@ -9,6 +9,7 @@
           </mappings>
           <excludedPaths>
             <excludedPath path="/program/sound_classification_v3/Knock_dataset" />
+            <excludedPath path="/program/sound_classification_v3/results" />
           </excludedPaths>
         </serverdata>
       </paths>

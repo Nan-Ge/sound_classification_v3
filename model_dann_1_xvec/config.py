@@ -53,7 +53,7 @@ ON_LR_ADJUST_STEP = 50  # 学习率调整步长，单位：epoch
 ON_LR_ADJUST_RATIO = 0.1  # 学习率调整比例，每ON_LR_ADJUST_STEP个epoch，调整至原来的0,1
 
 ONLINE_EPOCH = 100  # 在线训练epoch数
-FINE_TUNE_BATCH = 20  # Fine-tuning Dataset的batch大小
+FINE_TUNE_BATCH = 19 # Fine-tuning Dataset的batch大小
 
 
 

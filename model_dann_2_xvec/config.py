@@ -1,8 +1,12 @@
 import numpy as np
 
+# Flow control
+TRAIN_STAGE = 1
+FINE_TUNE_STAGE = 0
 
 # Dataset Related
-SUPPORT_SET_LABEL = set()  # 支撑集样本类别
+# 6, 7, 20, 21, 33, 34, 35
+SUPPORT_SET_LABEL = set((1, 2, 24, 25, 26, 43, 44))  # 支撑集样本类别
 LABEL_DICT = {
     '2-1': np.int64(1), '2-2': np.int64(2),
     '3-1': np.int64(3), '3-2': np.int64(4), '3-3': np.int64(5),
@@ -27,28 +31,31 @@ LABEL_DICT = {
 
 # Network Parameters
 EMBEDDING_SIZE = 128  # Feature Extractor得到的embedding的大小（一维）
+XVEC_VERSION = 2  # X-vector实现版本
 
 # Loss Related
-LOSS_WEIGHTS = (1.0, 1.0, 1.0)  # 三个损失(src_lp_err, tgt_lp_loss, dc_err)的权重
+# LOSS_WEIGHTS = (1.0, 1.0, 1.0)  # 三个损失(src_lp_err, tgt_lp_loss, dc_err)的权重
 
 # Offline-training Related
-OFF_INITIAL_LR = 1e-3  # 初始学习率
-OFF_WEIGHT_DECAY = 1e-4  # 权重衰减率
-OFF_LR_ADJUST_STEP = 50  # 学习率调整步长，单位：epoch
+# OFF_INITIAL_LR = 1e-2  # 初始学习率
+# OFF_WEIGHT_DECAY = 1e-3  # 权重衰减率
+OFF_LR_ADJUST_STEP = 100  # 学习率调整步长，单位：epoch
 OFF_LR_ADJUST_RATIO = 0.1  # 学习率调整比例，每OFF_LR_ADJUST_STEP个epoch，调整至原来的0.1
-
-OFFLINE_EPOCH = 200  # 离线训练epoch数
-NUM_SAMPLES_PER_CLASS = 2  # Triplet-loss BalancedBatchSampler中每类样本的取样个数，决定了triplet的batch大小
-
+OFFLINE_EPOCH = 300  # 离线训练epoch数
+# NUM_SAMPLES_PER_CLASS = 3  # Triplet-loss BalancedBatchSampler中每类样本的取样个数，决定了triplet的batch大小
+NOISE_EPS = 1e-6  # 离线训练噪声强度
+# P_DROP = 0.3  # 离线训练dropout概率
 
 # Online-training Related
+# FIXED_MODULE = ['domain_classifier']
+FIXED_MODULE = ['feature_extractor', 'domain_classifier']
 ON_INITIAL_LR = 1e-3  # 初始学习率
 ON_WEIGHT_DECAY = 1e-4  # 权重衰减率
 ON_LR_ADJUST_STEP = 50  # 学习率调整步长，单位：epoch
 ON_LR_ADJUST_RATIO = 0.1  # 学习率调整比例，每ON_LR_ADJUST_STEP个epoch，调整至原来的0,1
 
-ONLINE_EPOCH = 100  # 在线训练epoch数
-FINE_TUNE_BATCH = 20  # Fine-tuning Dataset的batch大小
+ONLINE_EPOCH = 300  # 在线训练epoch数
+FINE_TUNE_BATCH = 50  # Fine-tuning Dataset的batch大小
 
 
 
