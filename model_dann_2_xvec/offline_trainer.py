@@ -1,7 +1,8 @@
+import numpy as np
+
 import torch
 from torchsummary import summary
 
-import numpy as np
 import sys
 import os
 import time
@@ -122,7 +123,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs, 
         dc_err = loss_fn(dc_output, dmn_label)
 
         # (3) Backward Propagation
-        err_total = args['SRC_LOSS_WGT'] * src_lp_err + args['TGT_LOSS_WGT'] * tgt_lp_err + args['DC_LOSS_WGT'] * dc_err
+        err_total = args['SRC_LOSS_WGT']/10 * src_lp_err + args['TGT_LOSS_WGT']/10 * tgt_lp_err + args['DC_LOSS_WGT']/10 * dc_err
 
         err_total.backward()
         optimizer.step()

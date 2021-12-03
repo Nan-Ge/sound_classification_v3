@@ -4,6 +4,7 @@ import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
+import numpy as np
 import torch.optim as optim
 import torch.utils.data
 from torch.optim import lr_scheduler
@@ -56,11 +57,11 @@ def get_params():
     parser.add_argument('--OFF_WEIGHT_DECAY', type=float, default=1e-2,
                         help='Weight decay rate of offline training')
 
-    parser.add_argument('--SRC_LOSS_WGT', type=float, default=1.0,
+    parser.add_argument('--SRC_LOSS_WGT', type=int, default=10,
                         help='Source Label Predictor Loss')
-    parser.add_argument('--TGT_LOSS_WGT', type=float, default=1.0,
+    parser.add_argument('--TGT_LOSS_WGT', type=int, default=10,
                         help='Target Label Predictor Loss')
-    parser.add_argument('--DC_LOSS_WGT', type=float, default=1.0,
+    parser.add_argument('--DC_LOSS_WGT', type=int, default=10,
                         help='Domain regressor Loss')
 
     args, _ = parser.parse_known_args()
@@ -260,10 +261,10 @@ if __name__ == '__main__':
     try:
         # get parameters for tuner
         tuner_params = nni.get_next_parameter()
-        # logger.debug(tuner_params)
+        logger.debug(tuner_params)
         logger.debug("Starting XVEC_DANN parameters searching!")
         params = vars(merge_parameter(get_params(), tuner_params))
-        print(params)
+        logger.debug(params)
         main(params)
     except Exception as exception:
         logger.exception(exception)

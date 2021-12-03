@@ -1,10 +1,11 @@
+import numpy as np
+
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 from model_dann_1_xvec.config import *
 
 import os
-import numpy as np
 
 from sklearn.utils import shuffle
 
