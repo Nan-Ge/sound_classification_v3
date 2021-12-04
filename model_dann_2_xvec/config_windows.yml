@@ -1,0 +1,15 @@
+experimentName: XVEC_DANN
+searchSpaceFile: search_space.json
+trialCommand: python main.py
+trialCodeDirectory: .
+trialGpuNumber: 1
+trialConcurrency: 2
+maxExperimentDuration: 24h
+maxTrialNumber: 100
+tuner:
+  name: TPE
+  classArgs:
+    optimize_mode: maximize
+trainingService:
+  platform: local
+  useActiveGpu: True

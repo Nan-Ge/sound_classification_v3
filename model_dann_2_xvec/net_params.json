@@ -1,0 +1,19 @@
+{
+    "FEATURE_TYPE": "fbank",
+    "SRC_DATASET": "sim_data_aug",
+    "INTERVAL": 0.5,
+    "N_FFT": 512,
+    "DENO_METHOD": "skimage-Visu",
+    "NUM_SAMPLES_PER_CLASS": 4,
+    "EMBED_SIZE": 128,
+    "TDNN_OUT_CHANNEL": 256,
+    "TDNN_LAST_OUT_CHANNEL": 1024,
+    "FC1_OUT_DIM": 2,
+    "FC2_OUT_DIM": 8,
+    "P_DROP": 0.4,
+    "OFF_LR": 0.001,
+    "OFF_WEIGHT_DECAY": 0.01,
+    "SRC_LOSS_WGT": 10,
+    "TGT_LOSS_WGT": 5,
+    "DC_LOSS_WGT": 15
+}

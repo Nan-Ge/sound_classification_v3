@@ -13,6 +13,7 @@ import nni
 from nni.utils import merge_parameter
 import argparse
 import logging
+import json
 
 from model_dann_1_xvec.dataset import KnockDataset_train, KnockDataset_val, KnockDataset_pair, load_data, BalancedBatchSampler
 from offline_trainer import val_epoch, model_fit
@@ -29,43 +30,56 @@ def get_params():
                         default="stft", help="Method of feature extraction")
     parser.add_argument('--SRC_DATASET', type=str, default="sim_data",
                         help="Training simulation dataset")
-    parser.add_argument("--INTERVAL", type=float, default=0.0,
+    parser.add_argument("--INTERVAL", type=float, default=0.3,
                         help="Interval of feature extraction")
-    parser.add_argument("--N_FFT", type=int, default=128,
+    parser.add_argument("--N_FFT", type=int, default=512,
                         help="FFT window size")
-    parser.add_argument('--DENO_METHOD', type=str, default="skimage-Bayes",
+    parser.add_argument('--DENO_METHOD', type=str, default="skimage-Visu",
                         help="Method of exp_data denoising")
 
     parser.add_argument('--NUM_SAMPLES_PER_CLASS', type=int, default=2,
                         help="Offline batch size")
 
-    parser.add_argument('--EMBED_SIZE', type=int, default=128,
+    parser.add_argument('--EMBED_SIZE', type=int, default=256,
                         help="Feature extractor embed size")
-    parser.add_argument('--TDNN_OUT_CHANNEL', type=int, default=128,
+    parser.add_argument('--TDNN_OUT_CHANNEL', type=int, default=512,
                         help="Output channel of TDNN layer")
-    parser.add_argument('--TDNN_LAST_OUT_CHANNEL', type=int, default=512,
+    parser.add_argument('--TDNN_LAST_OUT_CHANNEL', type=int, default=1024,
                         help="Output channel of the last TDNN layer")
     parser.add_argument('--FC1_OUT_DIM', type=int, default=2,
                         help='Output channel of FC1')
-    parser.add_argument('--FC2_OUT_DIM', type=int, default=2,
+    parser.add_argument('--FC2_OUT_DIM', type=int, default=8,
                         help='Output channel of FC2')
-    parser.add_argument('--P_DROP', type=float, default=0.2,
+    parser.add_argument('--P_DROP', type=float, default=0.3,
                         help='Probability of dropout')
 
-    parser.add_argument('--OFF_LR', type=float, default=1e-2,
+    parser.add_argument('--OFF_LR', type=float, default=0.0001,
                         help='Learning rate of offline training')
-    parser.add_argument('--OFF_WEIGHT_DECAY', type=float, default=1e-2,
+    parser.add_argument('--OFF_WEIGHT_DECAY', type=float, default=0.001,
                         help='Weight decay rate of offline training')
 
-    parser.add_argument('--SRC_LOSS_WGT', type=int, default=10,
+    parser.add_argument('--SRC_LOSS_WGT', type=int, default=15,
                         help='Source Label Predictor Loss')
-    parser.add_argument('--TGT_LOSS_WGT', type=int, default=10,
+    parser.add_argument('--TGT_LOSS_WGT', type=int, default=5,
                         help='Target Label Predictor Loss')
-    parser.add_argument('--DC_LOSS_WGT', type=int, default=10,
+    parser.add_argument('--DC_LOSS_WGT', type=int, default=20,
                         help='Domain regressor Loss')
 
     args, _ = parser.parse_known_args()
     return args
+
+
+def get_params_from_json(json_file_path):
+    parser = argparse.ArgumentParser(description="PyTorch XVEC-DANN Paras")
+    args_dict = vars(parser.parse_args())
+
+    with open(json_file_path) as f:
+        params_dict = json.load(fp=f)
+
+    for key in params_dict.keys():
+        args_dict[key] = params_dict[key]
+
+    return argparse.Namespace(**args_dict)
 
 
 def main(args):
@@ -187,7 +201,7 @@ def main(args):
     model_path = '../results/output_model'
     model_list = list(os.listdir(model_path))
     model_list.sort(reverse=True)
-    model_name = model_list[1]
+    model_name = 'model_dann_2_2021-12-03_20-46-01_0.91-0.92.pkl'
     baseline_model = torch.load(os.path.join(model_path, model_name))
 
     # (3) 验证基线模型 （混淆矩阵 + t-SNE可视化）
@@ -204,12 +218,13 @@ def main(args):
         torch.utils.data.DataLoader(tgt_train_dataset, batch_size=len(tgt_train_dataset)),
         torch.utils.data.DataLoader(tgt_val_dataset, batch_size=len(tgt_val_dataset))]
 
-    accu, cm = val_epoch(val_loader_list[3], baseline_model, cuda)
+    n_correct, n_total, cm = val_epoch(val_loader_list[3], baseline_model, cuda)
+    accu = n_correct / n_total
 
-    plot_confusion_matrix(cm=cm,
-                          save_path=os.path.join('../results', 'output_confusion_matrix',
-                                                 model_name + '_experiment' + '.png'),
-                          classes=[str(i) for i in pair_wise_dataset.pair_label_set])
+    # plot_confusion_matrix(cm=cm,
+    #                       save_path=os.path.join('../results', 'output_confusion_matrix',
+    #                                              model_name + '_experiment' + '.png'),
+    #                       classes=[str(i) for i in pair_wise_dataset.pair_label_set])
 
     print('\nBaseline model validation accuracy: %0.2f %%' % (accu * 100))
 
@@ -223,6 +238,7 @@ def main(args):
     # (4) 定义Fine-tuning网络及可训练参数
     ft_model = ft_xvec_dann_orig(
         baseModel=baseline_model,
+        args=args,
         n_class=len(config.SUPPORT_SET_LABEL),
         version=config.XVEC_VERSION)
 
@@ -259,11 +275,8 @@ def main(args):
 if __name__ == '__main__':
     logger = logging.getLogger('XVEC-DANN_AutoML')
     try:
-        # get parameters for tuner
         tuner_params = nni.get_next_parameter()
-        logger.debug(tuner_params)
-        logger.debug("Starting XVEC_DANN parameters searching!")
-        params = vars(merge_parameter(get_params(), tuner_params))
+        params = vars(merge_parameter(get_params_from_json('./net_params.json'), tuner_params))
         logger.debug(params)
         main(params)
     except Exception as exception:

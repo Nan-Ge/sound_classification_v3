@@ -56,7 +56,6 @@ def feat_extraction(root_data_dir, feat_data_dir, kargs):
 
     max_len = kargs.max_len
     interval = [kargs.interval, 1.0]
-    feat_type = kargs.feat_type
     deno_method = kargs.deno_method  # (skimage-Visu, skimage-Bayes, pywt)
 
     for domain_ in doms:

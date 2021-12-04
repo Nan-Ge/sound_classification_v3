@@ -86,30 +86,33 @@ class xvec_dann_orig(nn.Module):
 
 
 class ft_xvec_dann_orig(nn.Module):
-    def __init__(self, baseModel, n_class, version=1):
+    def __init__(self, baseModel, args, n_class, version=1):
         super(ft_xvec_dann_orig, self).__init__()
         self.version = version
+
+        embedDim = args['EMBED_SIZE']
+        fc1_output_dim = args['FC1_OUT_DIM']
+        fc2_output_dim = args['FC2_OUT_DIM']
+
         # (1) 提取预训练的Feature extractor
         if version == 1:
             self.feature_extractor = list(baseModel.children())[0]
-            self.embedDim = self.feature_extractor.segment7.out_features
 
         elif version == 2:
             self.feature_extractor = list(baseModel.children())[0]
-            self.embedDim = self.feature_extractor.fc1.out_features
 
         # (2) 新增Label predictor
         self.lp_new = nn.Sequential()
         # Layer 1
-        self.lp_new.add_module('n_lp_fc1', nn.Linear(self.embedDim, self.embedDim * 2))
-        self.lp_new.add_module('n_lp_bn1', nn.BatchNorm1d(self.embedDim * 2))
+        self.lp_new.add_module('n_lp_fc1', nn.Linear(embedDim, embedDim * fc1_output_dim))
+        self.lp_new.add_module('n_lp_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
         self.lp_new.add_module('n_lp_prelu1', nn.PReLU())
         # Layer 2
-        self.lp_new.add_module('n_lp_fc2', nn.Linear(self.embedDim * 2, self.embedDim))
-        self.lp_new.add_module('n_lp_bn2', nn.BatchNorm1d(self.embedDim))
+        self.lp_new.add_module('n_lp_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
+        self.lp_new.add_module('n_lp_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
         self.lp_new.add_module('n_lp_prelu2', nn.PReLU())
         # Layer 3
-        self.lp_new.add_module('n_lp_fc3', nn.Linear(self.embedDim, n_class))
+        self.lp_new.add_module('n_lp_fc3', nn.Linear(embedDim * fc2_output_dim, n_class))
         self.lp_new.add_module('n_lp_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data):

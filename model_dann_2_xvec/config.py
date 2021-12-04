@@ -1,8 +1,8 @@
 import numpy as np
 
 # Flow control
-TRAIN_STAGE = 1
-FINE_TUNE_STAGE = 0
+TRAIN_STAGE = 0
+FINE_TUNE_STAGE = 1
 
 # Dataset Related
 # 6, 7, 20, 21, 33, 34, 35
@@ -56,6 +56,8 @@ ON_LR_ADJUST_RATIO = 0.1  # 学习率调整比例，每ON_LR_ADJUST_STEP个epoch
 
 ONLINE_EPOCH = 300  # 在线训练epoch数
 FINE_TUNE_BATCH = 50  # Fine-tuning Dataset的batch大小
+
+
 
 
 
