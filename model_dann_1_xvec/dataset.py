@@ -1,10 +1,11 @@
+import numpy as np
+
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data.sampler import BatchSampler
 from model_dann_1_xvec.config import *
 
 import os
-import numpy as np
 
 from sklearn.utils import shuffle
 
@@ -223,7 +224,6 @@ class KnockDataset_train(Dataset):
 
         self.total_label_set = set(self.y_total)
         self.train_label_set = list(self.total_label_set - support_label_set)  # 剔除支撑集label
-        self.train_label_set = list(self.total_label_set)
         self.train_label_set.sort()
 
         self.train_data = np.empty((0, self.x_total.shape[1], self.x_total.shape[2]), dtype=np.float32)
@@ -242,6 +242,7 @@ class KnockDataset_train(Dataset):
     def __getitem__(self, index):
         img = self.train_data[index: index + 1]
         label = int(self.train_label[index: index + 1])
+        label = self.train_label_set.index(label)
         return img, label
 
     def __len__(self):

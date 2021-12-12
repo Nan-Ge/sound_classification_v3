@@ -28,8 +28,7 @@ def netFT_fit(train_loader, test_loader, support_label_set, model, loss_fn, opti
         test_accu, _ = netFT_test_epoch(
             test_loader=test_loader,
             model=model,
-            cuda=cuda,
-            support_label_set=support_label_set)
+            cuda=cuda)
         print(', Test accuracy: %.2f %% for %d / %d' % (test_accu * 100, epoch + 1, n_epochs))
 
 
@@ -72,7 +71,7 @@ def netFT_train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, supp
     return err_label
 
 
-def netFT_test_epoch(test_loader, model, cuda, support_label_set):
+def netFT_test_epoch(test_loader, model, cuda):
     n_total = 0
     n_correct = 0
 

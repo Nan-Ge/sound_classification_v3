@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="05351a79-a649-41af-8e58-bfc6ccc82918" name="GPU_sound_classification">
+        <fileTransfer rootFolder="/mnt/sde/KnockKnock" accessType="SFTP" host="10.18.133.44" port="4793" sshConfigId="c30fb51a-7a4a-48e4-864f-9b0e5497eb67" sshConfig="eecyc@10.18.133.44:4793 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -96,8 +96,6 @@ class PairWiseLoss(nn.Module):
 
     def forward(self, exp_embedding, sim_embedding):
         pairs = self.pair_selector.get_pairs((exp_embedding, sim_embedding), [])
-
         pair_dist = (exp_embedding[pairs, :] - sim_embedding[pairs, :]).pow(2).sum(1)
-
         losses = F.relu(pair_dist - self.margin)
         return losses.mean()

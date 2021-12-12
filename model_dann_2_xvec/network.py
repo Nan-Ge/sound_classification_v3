@@ -1,3 +1,5 @@
+import numpy as np
+
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -43,18 +45,18 @@ class xvec_dann_orig(nn.Module):
         self.dmn_clr.add_module('dc_logsoftmax', nn.LogSoftmax(dim=1))
 
         # (3) Label Predictor
-        self.lbl_pred = nn.Sequential()
+        self.lb_pred = nn.Sequential()
         # Layer 1
-        self.lbl_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * fc1_output_dim))
-        self.lbl_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
-        self.lbl_pred.add_module('lp_prelu1', nn.PReLU())
+        self.lb_pred.add_module('lp_fc1', nn.Linear(embedDim * 1, embedDim * fc1_output_dim))
+        self.lb_pred.add_module('lp_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
+        self.lb_pred.add_module('lp_prelu1', nn.PReLU())
         # Layer 2
-        self.lbl_pred.add_module('lp_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
-        self.lbl_pred.add_module('lp_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
-        self.lbl_pred.add_module('lp_prelu2', nn.PReLU())
+        self.lb_pred.add_module('lp_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
+        self.lb_pred.add_module('lp_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
+        self.lb_pred.add_module('lp_prelu2', nn.PReLU())
         # Layer 3
-        self.lbl_pred.add_module('dc_fc3', nn.Linear(embedDim * fc2_output_dim, n_cls))
-        self.lbl_pred.add_module('dc_logsoftmax', nn.LogSoftmax(dim=1))
+        self.lb_pred.add_module('lp_fc3', nn.Linear(embedDim * fc2_output_dim, n_cls))
+        self.lb_pred.add_module('lp_logsoftmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data, alpha, eps):
         if self.version == 1:
@@ -74,7 +76,7 @@ class xvec_dann_orig(nn.Module):
         feat_output = self.l2_norm(feat_output)
 
         # Label Predictor 前向传播
-        lp_output = self.lbl_pred(feat_output)
+        lp_output = self.lb_pred(feat_output)
 
         # Domain Regressor 前向传播
         rev_feat = ReverseLayerF.apply(feat_output, alpha)
@@ -84,30 +86,37 @@ class xvec_dann_orig(nn.Module):
 
 
 class ft_xvec_dann_orig(nn.Module):
-    def __init__(self, baseModel, n_class, version=1):
+    def __init__(self, baseModel, args, n_class, version=1):
         super(ft_xvec_dann_orig, self).__init__()
         self.version = version
-        # (1) 提取预训练的Feature extractor
+
+        embedDim = args['EMBED_SIZE']
+        fc1_output_dim = args['FC1_OUT_DIM']
+        fc2_output_dim = args['FC2_OUT_DIM']
+
+        # (1) 提取预训练模型
+        # Feature Extractor
         if version == 1:
             self.feature_extractor = list(baseModel.children())[0]
-            self.embedDim = self.feature_extractor.segment7.out_features
-
         elif version == 2:
             self.feature_extractor = list(baseModel.children())[0]
-            self.embedDim = self.feature_extractor.fc1.out_features
+
+        # Label Predictor
+        # self.lp_new = list(baseModel.children())[3]
+        # self.lp_new.dc_fc3 = nn.Linear(embedDim * fc2_output_dim, n_class)
 
         # (2) 新增Label predictor
         self.lp_new = nn.Sequential()
         # Layer 1
-        self.lp_new.add_module('n_lp_fc1', nn.Linear(self.embedDim, self.embedDim * 2))
-        self.lp_new.add_module('n_lp_bn1', nn.BatchNorm1d(self.embedDim * 2))
+        self.lp_new.add_module('n_lp_fc1', nn.Linear(embedDim, embedDim * fc1_output_dim))
+        self.lp_new.add_module('n_lp_bn1', nn.BatchNorm1d(embedDim * fc1_output_dim))
         self.lp_new.add_module('n_lp_prelu1', nn.PReLU())
         # Layer 2
-        self.lp_new.add_module('n_lp_fc2', nn.Linear(self.embedDim * 2, self.embedDim))
-        self.lp_new.add_module('n_lp_bn2', nn.BatchNorm1d(self.embedDim))
+        self.lp_new.add_module('n_lp_fc2', nn.Linear(embedDim * fc1_output_dim, embedDim * fc2_output_dim))
+        self.lp_new.add_module('n_lp_bn2', nn.BatchNorm1d(embedDim * fc2_output_dim))
         self.lp_new.add_module('n_lp_prelu2', nn.PReLU())
         # Layer 3
-        self.lp_new.add_module('n_lp_fc3', nn.Linear(self.embedDim, n_class))
+        self.lp_new.add_module('n_lp_fc3', nn.Linear(embedDim * fc2_output_dim, n_class))
         self.lp_new.add_module('n_lp_softmax', nn.LogSoftmax(dim=1))
 
     def forward(self, input_data):

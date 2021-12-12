@@ -5,20 +5,29 @@
   "N_FFT": {"_type":"choice", "_value": [128, 256, 512]},
   "DENO_METHOD": {"_type":"choice", "_value": ["skimage-Visu", "skimage-Bayes"]},
 
-  "NUM_SAMPLES_PER_CLASS":{"_type":"choice","_value":[2, 3, 4, 5]},
+  "NUM_SAMPLES_PER_CLASS":{"_type":"choice","_value":[2, 3, 4]},
 
+  "FREQ_TIME": {"_type":"choice", "_value": [1, 2]},
   "EMBED_SIZE": {"_type":"choice", "_value": [64, 128, 256, 512]},
   "TDNN_OUT_CHANNEL": {"_type":"choice", "_value": [128, 256, 512]},
   "TDNN_LAST_OUT_CHANNEL": {"_type":"choice", "_value": [512, 1024, 1500]},
+  "P_DROP":{"_type":"choice","_value":[0.2, 0.3, 0.4, 0.5]},
+
+  "LP_DIM": {"_type":"choice", "_value": [64, 128, 256, 512]},
+  "DC_DIM": {"_type":"choice", "_value": [64, 128, 256, 512]},
   "FC1_OUT_DIM": {"_type":"choice", "_value": [2, 4, 8]},
   "FC2_OUT_DIM": {"_type":"choice", "_value": [2, 4, 8]},
-  "P_DROP":{"_type":"choice","_value":[0.2, 0.3, 0.4, 0.5]},
+  "LP_LAYERS": {"_type":"choice", "_value": [1, 3]},
+  "DC_LAYERS": {"_type":"choice", "_value": [1, 3]},
 
   "OFF_LR":{"_type":"choice","_value":[0.01, 0.001, 0.0001]},
   "OFF_WEIGHT_DECAY":{"_type":"choice","_value":[0.01, 0.001]},
 
-  "SRC_LOSS_WGT": {"_type":"choice","_value":[5, 10, 15, 20]},
-  "TGT_LOSS_WGT": {"_type":"choice","_value":[5, 10, 15, 20]},
-  "DC_LOSS_WGT": {"_type":"choice","_value":[5, 10, 15, 20]}
+  "TRIPLET_MARGIN":{"_type":"choice","_value":[5, 10, 15, 20]},
+  "PAIR_MARGIN":{"_type":"choice","_value":[5, 10, 15, 20]},
+
+  "SRC_TRIP_WGT": {"_type":"choice","_value":[5, 10, 15, 20]},
+  "TGT_TRIP_WGT": {"_type":"choice","_value":[5, 10, 15, 20]},
+  "PAIR_WGT": {"_type":"choice","_value":[5, 10, 15, 20]}
 }
 

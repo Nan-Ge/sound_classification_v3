@@ -23,8 +23,8 @@ class GlobalVar:
         self.GENMOMENTS = self.MODAL_SOUND + '/gen_moments'
         self.MATLAB = self.ROOT_DIR + '/matlab'
         self.FILEGENERATORS = self.ROOT_DIR + '/file_generator'
-        # self.DATASET = '/mnt/sde/wyz/data/knock_data'
-        self.DATASET = 'E:\Program\GitHub\sound_classification_v3\Knock_dataset'
+        self.DATASET = '/mnt/sde/KnockKnock/data/knock_data'
+        # self.DATASET = 'E:\Program\GitHub\sound_classification_v3\Knock_dataset'
 
     def __new__(cls, *args, **kwargs):
         if not hasattr(GlobalVar, "_instance"):

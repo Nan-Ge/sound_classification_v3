@@ -60,9 +60,9 @@ if __name__ == '__main__':
     target_path = 'fbank_dnoised_data'
     obj_list = ObjList(name)
     dataset = load_feature_data(obj_list, target_path)
-    print('Dataset 7:')
-    train_dataset, test_dataset = get_train_test_dataset_6(dataset, 20)
-    print('Loading data finished.')
+    print('Dataset 6')
+    train_dataset, test_dataset = get_train_test_dataset_6(dataset, 5)
+    print('Load data finished.')
 
     cuda = torch.cuda.is_available()
     print('cuda device count: ', torch.cuda.device_count())

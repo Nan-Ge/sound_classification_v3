@@ -1,7 +1,3 @@
-import torch
-from torchsummary import summary
-
-import numpy as np
 import sys
 import os
 import time
@@ -9,7 +5,7 @@ import nni
 from sklearn.metrics import confusion_matrix
 
 import config
-from model_dann_1_xvec.trainer_utils import *
+from model_dann_1_xvec.utils.trainer_utils import *
 
 
 def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_epochs, cuda, args):
@@ -42,7 +38,7 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
             model=model,
             cuda=cuda)
 
-        tgt_accu_n_correct, tgt_n_total, _= val_epoch(
+        tgt_accu_n_correct, tgt_n_total, _ = val_epoch(
             val_loader=val_loader[1],
             model=model,
             cuda=cuda)
@@ -53,17 +49,12 @@ def model_fit(train_loader, val_loader, model, loss_fn, optimizer, scheduler, n_
 
         nni.report_intermediate_result(val_accu)
 
-        print(', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' %
-              (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs))
+        print(', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' % (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs))
 
         with open(os.path.join('../results/output_train_log', log_save_name_1), 'a') as f:
-
-            train_output = '\r epoch: [%d / %d], src_lp_err: %f, tgt_lp_err: %f, dc_err: %f' % \
-                           (epoch + 1, n_epochs, src_lp_err, tgt_lp_err, dc_err)
+            train_output = '\r epoch: [%d / %d], src_lp_err: %f, tgt_lp_err: %f, dc_err: %f' % (epoch + 1, n_epochs, src_lp_err, tgt_lp_err, dc_err)
             f.write(train_output)
-
-            test_output = ', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' % \
-                          (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs)
+            test_output = ', validation accuracy of offline training: %.2f %% - %.2f %% for %d / %d' % (accu_src * 100, accu_tgt * 100, epoch + 1, n_epochs)
             f.write(test_output)
 
     nni.report_final_result(val_accu)
@@ -122,7 +113,7 @@ def train_epoch(train_loader, model, loss_fn, optimizer, cuda, epoch, n_epochs, 
         dc_err = loss_fn(dc_output, dmn_label)
 
         # (3) Backward Propagation
-        err_total = args['SRC_LOSS_WGT'] * src_lp_err + args['TGT_LOSS_WGT'] * tgt_lp_err + args['DC_LOSS_WGT'] * dc_err
+        err_total = args['SRC_LOSS_WGT']/10 * src_lp_err + args['TGT_LOSS_WGT']/10 * tgt_lp_err + args['DC_LOSS_WGT']/10 * dc_err
 
         err_total.backward()
         optimizer.step()

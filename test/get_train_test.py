@@ -393,7 +393,7 @@ if __name__ == '__main__':
     name = 'exp'
     target_path = 'fbank_dnoised_data'
     feature_transform = fbank_transform
-    overwrite = 0
+    overwrite = 1
     obj_list = ObjList(name)
     copy_sim_file(obj_list, 1)
     raw_to_feature_dataset(obj_list, target_path, feature_transform, overwrite)
@@ -402,5 +402,5 @@ if __name__ == '__main__':
     # train_dataset_2, test_dataset_2 = get_train_test_dataset_2(dataset, 5)
     # train_dataset_3, test_dataset_3 = get_train_test_dataset_3(dataset, 1)
     # train_dataset_4, test_dataset_4 = get_train_test_dataset_4(dataset, 1)
-    train_dataset_5, test_dataset_5 = get_train_test_dataset_5(dataset, 5)
+    # train_dataset_5, test_dataset_5 = get_train_test_dataset_5(dataset, 5)
     train_dataset_6, test_dataset_6 = get_train_test_dataset_6(dataset, 5)

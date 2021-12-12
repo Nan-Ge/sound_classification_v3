@@ -68,7 +68,7 @@ if __name__ == '__main__':
 
         # 实际声音
         exp_sound = load_npy(audio_filepath=os.path.join(root_dir, raw_data_dir, domains[0], sound_npy_file),
-                             max_len=max_len,
+                             new_len=max_len,
                              interval=interval)
 
         spec = spec_calc(audio_data=exp_sound[0], kargs=kargs, feat_type=feat_type)
@@ -85,10 +85,10 @@ if __name__ == '__main__':
 
         # 模拟声音
         sim_sound = load_npy(audio_filepath=os.path.join(root_dir, raw_data_dir, domains[1], sound_npy_file),
-                             max_len=max_len,
+                             new_len=max_len,
                              interval=interval)
         sim_sound_aug = load_npy(audio_filepath=os.path.join(root_dir, raw_data_dir, domains[2], sound_npy_file),
-                                 max_len=max_len,
+                                 new_len=max_len,
                                  interval=interval)
 
         spec = spec_calc(audio_data=sim_sound[0], kargs=kargs, feat_type=feat_type)
