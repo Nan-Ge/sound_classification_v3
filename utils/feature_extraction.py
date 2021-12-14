@@ -46,7 +46,7 @@ def feat_calc(audio_data, kargs):
 
 def feat_extraction(root_data_dir, feat_data_dir, kargs):
     raw_data_dir = 'raw_data'
-    doms = ['exp_data', 'sim_data', 'sim_data_aug']
+    doms = ['exp_data', 'sim_data']
 
     for i in range(len(doms)):
         if os.path.exists(os.path.join(root_data_dir, feat_data_dir, doms[i])):

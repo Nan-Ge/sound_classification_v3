@@ -1,0 +1,32 @@
+{
+    "FEATURE_TYPE": "stft",
+    "SRC_DATASET": "sim_data",
+    "INTERVAL": 0.4,
+    "N_FFT": 256,
+    "DENO_METHOD": "skimage-Visu",
+
+    "NUM_SAMPLES_PER_CLASS": 3,
+
+    "FREQ_TIME": 1,
+    "EMBED_SIZE": 256,
+    "TDNN_OUT_CHANNEL": 512,
+    "TDNN_LAST_OUT_CHANNEL": 1024,
+    "P_DROP": 0.4,
+
+    "LP_DIM": 46,
+    "DC_DIM": 2,
+    "FC1_OUT_DIM": 2,
+    "FC2_OUT_DIM": 2,
+    "LP_LAYERS": 3,
+    "DC_LAYERS": 3,
+
+    "OFF_LR": 0.001,
+    "OFF_WEIGHT_DECAY": 0.01,
+
+    "TRIPLET_MARGIN": 10,
+    "PAIR_MARGIN": 10,
+
+    "SRC_TRIP_WGT": 10,
+    "TGT_TRIP_WGT": 10,
+    "PAIR_WGT": 10
+}
